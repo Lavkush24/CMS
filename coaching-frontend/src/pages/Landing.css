@@ -1,0 +1,58 @@
+.landing {
+  padding: 40px;
+  text-align: center;
+}
+
+/* Hero */
+.hero {
+  margin-bottom: 60px;
+}
+
+.hero h1 {
+  font-size: 36px;
+}
+
+.hero p {
+  margin-top: 10px;
+  color: var(--subtext);
+}
+
+/* Sections */
+.section {
+  margin-top: 50px;
+}
+
+/* Grid */
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+/* Cards */
+.card {
+  background: var(--card);
+  padding: 20px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+}
+
+/* CTA */
+.cta {
+  margin-top: 60px;
+}
+
+.hero {
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: white;
+  padding: 60px;
+  border-radius: 20px;
+}
+
+button {
+  background: var(--primary);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 10px;
+}

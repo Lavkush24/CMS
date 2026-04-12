@@ -1,0 +1,60 @@
+.sidebar {
+  position: fixed;
+  width: 220px;
+  height: 100vh;
+
+  background: var(--card);
+  border-right: 1px solid var(--border);
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  padding: 16px;
+}
+
+/* Logo */
+.logo {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+/* Nav */
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Nav Item */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 10px 12px;
+  border-radius: 10px;
+
+  color: var(--text);
+  text-decoration: none;
+
+  transition: all 0.2s ease;
+}
+
+/* Hover */
+.nav-item:hover {
+  background: var(--primary-soft);
+}
+
+/* Active */
+.nav-item.active {
+  background: var(--primary);
+  color: white;
+}
+
+/* Footer */
+.sidebar-footer {
+  margin-top: auto;
+  padding-bottom: 30px;
+}

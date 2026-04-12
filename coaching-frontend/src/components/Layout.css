@@ -1,0 +1,33 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+/* Main content area */
+.main {
+  margin-left: 250px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Topbar */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+
+  backdrop-filter: blur(8px);
+}
+
+/* Content */
+.content {
+  padding: 24px;
+  overflow-y: auto;
+  height: calc(100vh - 60px); /* adjust if navbar height changes */
+}
+
+.topbar {
+  backdrop-filter: blur(8px);
+}

@@ -1,0 +1,42 @@
+.batches-container {
+  padding: 20px;
+}
+
+/* Card */
+.batch-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+
+.batch-card:hover {
+  transform: translateY(-4px);
+}
+
+/* Header */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.badge {
+  background: #eef2ff;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+/* Meta */
+.meta {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--subtext);
+}
+
+.search-bar {
+    margin-top: 10px;
+    margin-bottom: 20px;
+}

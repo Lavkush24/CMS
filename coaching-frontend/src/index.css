@@ -1,0 +1,13 @@
+/* Reset */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+/* Root container */
+#root {
+  min-height: 100vh;
+}
