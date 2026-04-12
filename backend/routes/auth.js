@@ -87,7 +87,7 @@ router.get('/oauth2callback', async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    res.redirect(`${process.env.URI_BACK}/login?token=${token}`);
+    res.redirect(`${process.env.FRONTEND_URL}/login?token=${token}`);
 
     // res.json({
     //   message: "Login successful",
