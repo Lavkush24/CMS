@@ -1,181 +1,152 @@
-# 🚀 Coaching Manager SaaS Platform
+# Coaching Manager — SaaS Platform
 
-A modern, full-stack SaaS application designed to help coaching institutes manage students, teachers, batches, and revenue analytics — all in one place.
+> A scalable, multi-tenant SaaS application for coaching institutes to manage students, teachers, batches, and revenue analytics — all in one system.
 
----
-
-## 📌 Overview
-
-Coaching Manager is a multi-tenant web application where each coaching institute can:
-
-* Manage students, teachers, and batches
-* Track revenue and teacher earnings
-* View analytics dashboards
-* Store data securely using Google Sheets
-* Upgrade to premium features
+[![Frontend](cms.lawxkd.dev)](https://cms-six-rho.vercel.app)
 
 ---
 
-## 🧠 Core Idea
+## Overview
 
-Each user (coaching owner) gets:
+Each coaching institute using this platform can:
 
-* 🔐 Secure login via Google OAuth
-* 📊 Dedicated Google Sheet for data storage
-* 📈 Personalized dashboard and analytics
-
-This makes the system lightweight, scalable, and cost-efficient.
-
----
-
-## 🏗️ Tech Stack
-
-### Frontend
-
-* React (Vite)
-* React Router
-* Recharts (charts & analytics)
-* Custom CSS (modern UI)
-
-### Backend
-
-* Node.js + Express
-* MongoDB Atlas (user & auth storage)
-* Google OAuth 2.0
-* JWT Authentication
-
-### Database Strategy
-
-* MongoDB → User + auth + plan
-* Google Sheets → App data (students, teachers, batches)
+- Log in securely via **Google OAuth**
+- Access **fully isolated data** (multi-tenant)
+- Manage day-to-day operations efficiently
+- Make **data-driven decisions** through analytics
 
 ---
 
-## 🔐 Authentication Flow
+## Project Evolution
 
-1. User clicks **Login with Google**
-2. Redirect to Google OAuth
-3. Backend receives callback
-4. JWT token generated
-5. Redirect to frontend with token
-6. Frontend stores token in localStorage
-7. Protected routes unlock
+The system was built iteratively across 5 phases, each solving a real problem.
 
----
+### Phase 1 — Basic CRUD
+Initial version with student, teacher, and batch management. No authentication, no isolation, MongoDB for everything.
 
-## 📊 Features
-
-### 👨‍🎓 Student Management
-
-* Add, update, and search students
-* Assign students to batches
-* Track fees
-
-### 👨‍🏫 Teacher Management
-
-* Add teachers with subject & rate
-* Calculate earnings automatically
-
-### 🧩 Batch Management
-
-* Create batches
-* Assign teachers
-* Manage structure
-
-### 📈 Dashboard Analytics
-
-* Total students & teachers
-* Total revenue
-* Top-performing teacher
-* Visual charts
+**Problems:** No scalability, no user isolation, no analytics.
 
 ---
 
-## 💰 Premium System
+### Phase 2 — Authentication Layer
+Integrated **Google OAuth 2.0** with **JWT-based** session management.
 
-The app uses a subscription-based model:
-
-| Feature            | Free | Pro |
-| ------------------ | ---- | --- |
-| Student Management | ✅    | ✅   |
-| Teacher Management | ✅    | ✅   |
-| Revenue Analytics  | ❌    | ✅   |
-| Charts & Insights  | ❌    | ✅   |
-
-### Flow:
-
-* Premium APIs return `403`
-* Frontend shows upgrade modal
-* User upgrades → features unlocked
+**Impact:** Secure login, multi-user support, SaaS foundation established.
 
 ---
 
-## 🌐 Deployment
+### Phase 3 — Hybrid Database Architecture _(Major Upgrade)_
 
-### Frontend
+**Problem:** MongoDB handling all operational data was costly and rigid.
 
-* Hosted on Vercel
+**Solution:**
 
-### Backend
+| Layer | Storage |
+|---|---|
+| Users, Auth, Subscriptions | MongoDB Atlas |
+| Students, Teachers, Batches | Google Sheets |
 
-* Hosted on Render
-
-### Database
-
-* MongoDB Atlas
+**Impact:** Reduced infrastructure cost, faster iteration, easier data management.
 
 ---
 
-## ⚙️ Environment Variables
+### Phase 4 — Analytics Dashboard
+Added revenue tracking, teacher earnings, student/batch metrics, and visual charts via **Recharts**.
 
-### Backend (`.env`)
+**Impact:** Coaching owners can now make data-driven decisions at a glance.
+
+---
+
+### Phase 5 — Premium Subscription System
+Backend-enforced feature gating (`403 Forbidden`) with a frontend upgrade flow.
+
+| Feature | Free | Pro |
+|---|:---:|:---:|
+| Student Management | ✅ | ✅ |
+| Teacher Management | ✅ | ✅ |
+| Revenue Analytics | ❌ | ✅ |
+| Charts & Insights | ❌ | ✅ |
+
+---
+
+## Architecture
 
 ```
-PORT=3000
-JWT_SECRET=your_secret
+Client (React — Vercel)
+        │
+        ▼
+Backend API (Node.js — Render)
+        │
+        ├──► MongoDB Atlas      (Auth, Users, Subscriptions)
+        │
+        └──► Google Sheets      (Students, Teachers, Batches)
+```
 
-MONGO_URI=your_mongodb_uri
+### Key Engineering Decisions
 
-GOOGLE_CLIENT_ID=your_client_id
-GOOGLE_CLIENT_SECRET=your_client_secret
-GOOGLE_CALLBACK_URL=your_backend_url/oauth2callback
+**Hybrid Database** — MongoDB stores structured, secure data. Google Sheets handles flexible operational data, reducing cost and complexity.
 
-FRONTEND_URL=your_frontend_url
+**JWT Authentication** — Stateless tokens make the system horizontally scalable with no server-side session storage.
+
+**Backend Feature Gating** — Subscription checks run server-side, preventing any client-side bypass and ensuring subscription integrity.
+
+---
+
+## Features
+
+**Student Management** — Add, update, and search students. Assign to batches and track fee payments.
+
+**Teacher Management** — Manage teachers with subject and hourly rate. Earnings are calculated automatically.
+
+**Batch Management** — Create and configure batches, assign teachers, and monitor enrollment.
+
+**Analytics Dashboard** — Revenue insights, teacher performance metrics, and visual charts — all in one view.
+
+---
+
+## Tech Stack
+
+| Layer | Tech |
+|---|---|
+| Frontend | React (Vite), React Router, Recharts |
+| Backend | Node.js, Express |
+| Database | MongoDB Atlas |
+| Operational Data | Google Sheets API |
+| Auth | Google OAuth 2.0, JWT |
+| Deployment | Vercel (frontend), Render (backend) |
+
+---
+
+## Authentication Flow
+
+```
+1. User clicks "Login with Google"
+2. Redirected to Google OAuth consent screen
+3. Backend handles the OAuth callback
+4. JWT token is generated and returned
+5. Frontend stores the token securely
+6. Protected routes become accessible
 ```
 
 ---
 
-### Frontend (`.env`)
+## Local Setup
 
-```
-VITE_API_URL=your_backend_url
-```
-
----
-
-## 🚀 Local Setup
-
-### 1. Clone repo
-
-```
-git clone <repo-url>
+**1. Clone the repository**
+```bash
+git clone https://github.com/Lavkush24/CMS.git
+cd coaching-manager
 ```
 
----
-
-### 2. Backend setup
-
-```
+**2. Start the backend**
+```bash
 cd backend
 npm install
-npm run dev
+npm start
 ```
 
----
-
-### 3. Frontend setup
-
-```
+**3. Start the frontend**
+```bash
 cd frontend
 npm install
 npm run dev
@@ -183,19 +154,35 @@ npm run dev
 
 ---
 
-## 🔄 OAuth Configuration
+## Environment Variables
 
-In Google Cloud Console:
+**Backend** (`.env`)
+```env
+PORT=3000
+JWT_SECRET=your_secret
+MONGO_URI=your_mongodb_uri
+GOOGLE_CLIENT_ID=your_client_id
+GOOGLE_CLIENT_SECRET=your_client_secret
+GOOGLE_CALLBACK_URL=your_backend_url/oauth2callback
+FRONTEND_URL=your_frontend_url
+```
 
-### Authorized Redirect URIs:
+**Frontend** (`.env`)
+```env
+VITE_API_URL=your_backend_url
+```
 
+---
+
+## OAuth Configuration
+
+**Authorized Redirect URIs**
 ```
 http://localhost:3000/oauth2callback
 https://your-backend.onrender.com/oauth2callback
 ```
 
-### Authorized Origins:
-
+**Authorized JavaScript Origins**
 ```
 http://localhost:5173
 https://your-frontend.vercel.app
@@ -203,55 +190,32 @@ https://your-frontend.vercel.app
 
 ---
 
-## ⚠️ Important Notes
+## Production Checklist
 
-* `.env` is not committed (security)
-* Google credentials must be configured correctly
-* Vercel requires SPA rewrite (`vercel.json`)
-* Backend must allow CORS for frontend domain
-
----
-
-## 🧠 Architecture
-
-```
-Frontend (Vercel)
-↓
-Backend API (Render)
-↓
-MongoDB Atlas (users)
-↓
-Google Sheets (app data)
-```
+- [ ] Replace all placeholder links (`your-...`) with real URLs
+- [ ] Configure CORS for your deployed domains
+- [ ] Never commit `.env` files to version control
+- [ ] Handle JWT token expiry on the frontend
+- [ ] Verify OAuth redirect URIs match exactly in Google Console
 
 ---
 
-## 🔥 Key Highlights
+## Roadmap
 
-* Multi-user SaaS architecture
-* Google Sheets as dynamic database
-* JWT-based authentication
-* Premium feature gating
-* Production deployment
-
----
-
-## 🚀 Future Improvements
-
-* Payment integration (Razorpay/Stripe)
-* Fee reminders & notifications
-* Multi-admin support
-* Mobile app
-* Advanced analytics
+- [ ] Payment integration (Razorpay / Stripe)
+- [ ] In-app notifications system
+- [ ] Multi-admin support per institute
+- [ ] Mobile app (React Native)
+- [ ] Advanced analytics with date-range filtering
 
 ---
 
-## 👨‍💻 Author
+## Author
 
-Built as a full-stack SaaS project focusing on real-world architecture, scalability, and monetization.
+Built as a real-world SaaS system with focus on **architecture design**, **scalability**, and **monetization strategy**.
 
 ---
 
-## 📄 License
+## License
 
-This project is for educational and demonstration purposes.
+For educational and demonstration purposes.
