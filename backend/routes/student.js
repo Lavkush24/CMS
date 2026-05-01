@@ -1,63 +1,101 @@
 const express = require('express');
 const router = express.Router();
-const { google } = require('googleapis');
-const { getOAuthClient } = require('../services/google');
-const User = require('../models/User');
+const mongoose = require('mongoose');
+
+const Student = require('../models/Student');
+const Batch = require('../models/Batch');
+const StudentBatch = require("../models/StudentBatch");
+
+const authMiddleware = require('../middleware/auth');
 const { studentSchema } = require('../validators/student.schema');
-const { getSheetsClient, getValues, appendValues, updateRow } = require('../services/googleSheets');
 const { studentUpdateSchema } = require('../validators/student.update.schema');
-const authMiddleware = require('../middleware/authmiddleware');
+const { pushJob } = require('../services/syncQueue');
 
-router.post('/add', authMiddleware,async (req, res) => {
+// ADD STUDENT
+router.post('/add', authMiddleware, async (req, res) => {
   try {
-    const { error , value } = studentSchema.validate(req.body); 
-
+    const { error, value } = studentSchema.validate(req.body);
     if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+//     console.log("RAW BODY:", req.body);
+// console.log("VALIDATED VALUE:", value);
+
+    const { name, standard,subject, aadhar, phone, batches } = value;
+
+    // Validate batch from Mongo (NOT Sheets)
+    // extract all batchIds
+    const batchIds = batches.map(b => b.batchId);
+
+    // fetch valid batches
+    const validBatches = await Batch.find({
+      _id: { $in: batchIds },
+      ownerId: req.user.id
+    }).select('_id');
+
+    // compare counts
+    if (validBatches.length !== batchIds.length) {
       return res.status(400).json({
-        error: error.details[0].message
+        error: "One or more batchIds are invalid"
       });
     }
 
-    const { name, standard, aadhar, phone, batchId, feePaid } = value;
+    //  Create student in Mongo
+    const student = await Student.create({
+      name,
+      standard,
+      subject,
+      aadharNumber: aadhar,
+      phone,
+      ownerId: req.user.id
+    });
 
-    // const user = await User.findOne({ email });
-    const user = req.user;
-    if (!user) return res.status(404).send("User not found");
+    // console.log(batches);
+    // console.log("Type of batches:", typeof batches);
+// console.log("Is array:", Array.isArray(batches));
 
-    console.log("sheetId: ",user.sheets.spreadsheetId);
+    if (batches && batches.length > 0) {
+      // console.log(" BEFORE INSERT");
+      const enrollments = batches.map(b => ({
+        studentId: student._id,
+        batchId: b.batchId,
+        feesPaid: b.feesPaid,
+        ownerId: req.user.id
+      }));
 
-    const sheets = getSheetsClient(user.tokens); 
-
-    //  Fetch batches
-    const batchRows = await getValues(sheets,user.sheets.spreadsheetId, 'Batches!A:A');
-
-    if(batchRows.length <= 1) {
-        return res.status(400).send("!No batch exists")
+      await StudentBatch.insertMany(enrollments);
     }
 
-    // Validate batch exists
-    const batchExists = batchRows.slice(1).some(row => row[0] === batchId);
-
-    if (!batchExists) {
-      return res.status(400).send("Invalid batchId");
+    //  fallback (old system support)
+    else if (req.body.batchId) {
+      await StudentBatch.create({
+        studentId: student._id,
+        batchId: req.body.batchId,
+        feesPaid: req.body.feePaid,
+        ownerId: req.user.id
+      });
     }
-
-    // Add student
-    const studentId = "S" + Date.now();
-    await appendValues(sheets, user.sheets.spreadsheetId, 'Students!A1', [[studentId, name, standard, aadhar, phone, batchId, feePaid, "ACTIVE",""]]);
+    //  Async sync (placeholder)
+    // syncQueue.push({ type: "CREATE_STUDENT", data: student });
+    pushJob({
+      type: "CREATE_STUDENT",
+      userId: req.user.id,
+      data: student
+    });
 
     res.json({
-      message: "Student added successfully"
+      message: "Student added",
+      student
     });
 
   } catch (err) {
     console.error(err);
-    res.status(500).send("Error adding student");
+    res.status(500).json({ error: "Error adding student" });
   }
 });
 
-
-router.put('/update/:id', authMiddleware,async (req, res) => {
+router.put('/update/:id', authMiddleware, async (req, res) => {
   try {
     const studentId = req.params.id;
 
@@ -68,183 +106,50 @@ router.put('/update/:id', authMiddleware,async (req, res) => {
       });
     }
 
-    const updates = value;
-    const user = req.user;
+    const student = await Student.findOne({
+      _id: studentId,
+      ownerId: req.user.id
+    });
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    const sheets = await getSheetsClient(user.tokens);
-
-    const rows = await getValues(
-      sheets,
-      user.sheets.spreadsheetId,
-      'Students!A:G'
-    );
-
-    const data = rows.slice(1);
-
-    const index = data.findIndex(row => row[0] === studentId);
-
-    if (index === -1) {
+    if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
 
-    const existing = data[index];
+    // Validate batch if updating
+    if (value.batchId) {
+      const batch = await Batch.findOne({
+        _id: value.batchId,
+        ownerId: req.user.id
+      });
 
-    //  Validate batch if updating
-    if (updates.batchId) {
-      const batchRows = await getValues(
-        sheets,
-        user.sheets.spreadsheetId,
-        'Batches!A:A'
-      );
-
-      const exists = batchRows.slice(1).some(r => r[0] === updates.batchId);
-
-      if (!exists) {
+      if (!batch) {
         return res.status(400).json({ error: "Invalid batchId" });
       }
     }
 
-    const updatedRow = [
-      existing[0],
-      updates.name ?? existing[1],
-      updates.standard ?? existing[2],
-      updates.aadhar ?? existing[3],
-      updates.phone ?? existing[4],
-      updates.batchId ?? existing[5],
-      updates.feePaid !== undefined
-        ? String(updates.feePaid)
-        : existing[6]
-    ];
-
-    const actualRow = index + 2;
-
-    await updateRow(
-      sheets,
-      user.sheets.spreadsheetId,
-      `Students!A${actualRow}:G${actualRow}`,
-      [updatedRow]
-    );
-
-    return res.json({
-      message: "Student updated successfully",
-      studentId,
-      data: updatedRow
+    Object.assign(student, {
+      name: value.name ?? student.name,
+      standard: value.standard ?? student.standard,
+      subject: value.subject ?? student.subject,
+      aadharNumber: value.aadhar ?? student.aadharNumber,
+      phone: value.phone ?? student.phone,
+      batchId: value.batchId ?? student.batchId,
+      feesPaid: value.feePaid ?? student.feesPaid
     });
 
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
+    await student.save();
 
-router.get('/list', authMiddleware,async (req, res) => {
-  try {
-    // const { email } = req.query;
-    // const user = await User.findOne({ email });
-    // if (!user) return res.send("User not found");
+    //  Async sync
+    // syncQueue.push({ type: "UPDATE_STUDENT", data: student });
+    pushJob({
+      type: "UPDATE_STUDENT",
+      userId: req.user.id,
+      data: student
+    });
 
-    const user = req.user;
-
-    const sheets = getSheetsClient(user.tokens);
-
-    const rows = await getValues(sheets, user.sheets.spreadsheetId, 'Students!A:I');
-
-    if (rows.length === 0) {
-      return res.json([]);
-    }
-
-    const headers = rows[0];
-
-    const data = rows
-    .slice(1)
-    .filter(row => ((row[7] || "ACTIVE").trim() === "ACTIVE"))
-    .map(row => ({
-      id: row[0] || "",
-      name: row[1] || "",
-      standard: row[2] || "",
-      aadhar: row[3] || "",
-      phone: row[4] || "",
-      batch: row[5] || "",
-      feePaid: Number(row[6]) || 0,
-    }));
-
-    res.json(data);
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Error fetching students");
-  }
-});
-
-router.put('/leave/:id', authMiddleware, async (req, res) => {
-  try {
-    const studentId = req.params.id;
-    const user = req.user;
-
-    const sheets = getSheetsClient(user.tokens);
-
-    // 1. Get all students
-    const rows = await getValues(
-      sheets,
-      user.sheets.spreadsheetId,
-      'Students!A:I'
-    );
-
-    if (!rows || rows.length <= 1) {
-      return res.status(404).json({ error: "No students found" });
-    }
-
-    const data = rows.slice(1);
-
-    // 2. Find student
-    const index = data.findIndex(row => row[0] === studentId);
-
-    if (index === -1) {
-      return res.status(404).json({ error: "Student not found" });
-    }
-
-    const existing = data[index];
-
-    // 3. Prevent double leave
-    if (existing[7] === "LEFT") {
-      return res.status(400).json({
-        error: "Student already marked as LEFT"
-      });
-    }
-
-    // 4. Create updated row
-    const today = new Date().toISOString().split('T')[0];
-
-    const updatedRow = [
-      existing[0], // ID
-      existing[1],
-      existing[2],
-      existing[3],
-      existing[4],
-      existing[5],
-      existing[6],
-      "LEFT",     // Status
-      today       // LeaveDate
-    ];
-
-    const actualRow = index + 2;
-
-    // 5. Update row
-    await updateRow(
-      sheets,
-      user.sheets.spreadsheetId,
-      `Students!A${actualRow}:I${actualRow}`,
-      [updatedRow]
-    );
-
-    return res.json({
-      message: "Student marked as LEFT",
-      studentId,
-      leaveDate: today
+    res.json({
+      message: "Student updated",
+      student
     });
 
   } catch (err) {
@@ -254,4 +159,210 @@ router.put('/leave/:id', authMiddleware, async (req, res) => {
 });
 
 
-module.exports = router ;
+router.get('/list', authMiddleware, async (req, res) => {
+
+  try {
+    // console.log(typeof req.user.id);
+    const ownerId = new mongoose.Types.ObjectId(req.user.id);
+    const students = await Student.aggregate([
+      {
+        $match: {
+          ownerId
+        }
+      },
+
+      //  join enrollments
+      {
+        $lookup: {
+          from: "studentbatches",
+          localField: "_id",
+          foreignField: "studentId",
+          as: "enrollments"
+        }
+      },
+
+      //  unwind enrollments
+      {
+        $unwind: {
+          path: "$enrollments",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+
+      //  join batch per enrollment
+      {
+        $lookup: {
+          from: "batches",
+          localField: "enrollments.batchId",
+          foreignField: "_id",
+          as: "batch"
+        }
+      },
+
+      {
+        $unwind: {
+          path: "$batch",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+
+      //  group back student
+      {
+        $group: {
+          _id: "$_id",
+
+          name: { $first: "$name" },
+          standard: { $first: "$standard" },
+          phone: { $first: "$phone" },
+          aadharNumber: { $first: "$aadharNumber" },
+          // status: { $first: "$status"},
+
+          batches: {
+            $push: {
+              batchId: "$batch._id",
+              name: "$batch.name",
+              subject: "$batch.subject",
+
+              //  from enrollment (IMPORTANT)
+              feesPaid: "$enrollments.feesPaid",
+              defaultFees: "$batch.fees",
+              status: "$enrollments.status"
+            }
+          }
+        }
+      }
+    ]);
+
+    // console.log(students);
+    res.json(students);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error fetching students" });
+  }
+});
+
+
+router.put('/leave/:id', authMiddleware, async (req, res) => {
+  try {
+    const student = await Student.findOne({
+      _id: req.params.id,
+      ownerId: req.user.id
+    });
+
+    if (!student) {
+      return res.status(404).json({ error: "Student not found" });
+    }
+
+    if (student.status === "LEFT") {
+      return res.status(400).json({
+        error: "Student already LEFT"
+      });
+    }
+
+    student.status = "LEFT";
+    student.leaveDate = new Date();
+
+    await student.save();
+
+    //  Async sync
+    // syncQueue.push({ type: "LEAVE_STUDENT", data: student });
+    pushJob({
+      type: "LEAVE_STUDENT",
+      userId: req.user.id,
+      data: student
+    });
+
+    res.json({
+      message: "Student marked as LEFT",
+      student
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+
+router.put('/leave-batch', authMiddleware, async (req, res) => {
+  try {
+    const { studentId, batchId } = req.body;
+
+    if (!studentId || !batchId) {
+      return res.status(400).json({ error: "Missing data" });
+    }
+
+    const updated = await StudentBatch.findOneAndUpdate(
+      {
+        studentId: new mongoose.Types.ObjectId(studentId),
+        batchId: new mongoose.Types.ObjectId(batchId),
+        ownerId: new mongoose.Types.ObjectId(req.user.id)
+      },
+      {
+        status: "LEFT",
+        leftAt: new Date()
+      },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ error: "Enrollment not found" });
+    }
+
+    res.json({ message: "Batch left successfully" });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error leaving batch" });
+  }
+});
+
+
+router.post('/enroll', authMiddleware, async (req, res) => {
+  try {
+    const { studentId, batchId, feesPaid } = req.body;
+
+    const studentObjId = new mongoose.Types.ObjectId(studentId);
+    const batchObjId = new mongoose.Types.ObjectId(batchId);
+    const ownerObjId = new mongoose.Types.ObjectId(req.user.id);
+
+    // 🔥 get batch (for default fee)
+    const batch = await Batch.findOne({
+      _id: batchObjId,
+      ownerId: ownerObjId
+    });
+
+    if (!batch) {
+      return res.status(400).json({ error: "Batch not found" });
+    }
+
+    // prevent duplicate
+    const exists = await StudentBatch.findOne({
+      studentId: studentObjId,
+      batchId: batchObjId,
+      ownerId: ownerObjId,
+      status: "ACTIVE"
+    });
+
+    if (exists) {
+      return res.status(400).json({ error: "Already enrolled" });
+    }
+
+    await StudentBatch.create({
+      studentId: studentObjId,
+      batchId: batchObjId,
+      feesPaid: feesPaid != null ? Number(feesPaid) : batch.fees, // ✅ KEY LINE
+      ownerId: ownerObjId
+    });
+
+    res.json({ message: "Batch added" });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error adding batch" });
+  }
+});
+
+module.exports = router;

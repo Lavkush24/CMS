@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { getOAuthClient } = require('../services/google');
+
+const { getOAuthClient, createInitialSheets } = require('../services/google');
 const User = require('../models/User');
-const { createInitialSheets } = require('../services/google');
+
 const { google } = require('googleapis');
 const jwt = require('jsonwebtoken');
 
@@ -12,7 +13,8 @@ const scopes = [
   'https://www.googleapis.com/auth/userinfo.email'
 ];
 
-// Step 1: Redirect user to Google
+
+//  Step 1: Redirect to Google
 router.get('/login', (req, res) => {
   const client = getOAuthClient();
 
@@ -25,21 +27,18 @@ router.get('/login', (req, res) => {
   res.redirect(url);
 });
 
-// Step 2: Callback
+
+//  Step 2: OAuth Callback
 router.get('/oauth2callback', async (req, res) => {
   try {
     const client = getOAuthClient();
-
     const { code } = req.query;
 
-    // Step 1: Get tokens
+    // 1. Get tokens
     const { tokens } = await client.getToken(code);
-
-    // console.log(tokens)
-
     client.setCredentials(tokens);
 
-    // Step 2: Get user email
+    // 2. Get user email
     const oauth2 = google.oauth2({
       auth: client,
       version: 'v2'
@@ -48,52 +47,54 @@ router.get('/oauth2callback', async (req, res) => {
     const userInfo = await oauth2.userinfo.v2.me.get();
     const email = userInfo.data.email;
 
-    // Step 3: Find or create user
+    // 3. Find or create user
     let user = await User.findOne({ email });
 
     if (!user) {
-        // First time user
-        user = new User({ email, tokens });
+      user = new User({
+        email,
+        tokens
+      });   
 
+      // OPTIONAL: create sheet (can disable later)
+      const sheetId = await createInitialSheets(client);
+
+      user.sheets = {
+        spreadsheetId: sheetId
+      };
+
+    } else {
+      // update tokens safely
+      user.tokens = {
+        ...user.tokens,
+        ...tokens
+      };
+
+      // ensure sheet exists
+      if (!user.sheets?.spreadsheetId) {
         const sheetId = await createInitialSheets(client);
 
         user.sheets = {
-            spreadsheetId: sheetId
+          spreadsheetId: sheetId
         };
-
-    } else {
-        // Existing user
-        user.tokens = {
-            ...user.tokens,
-            ...tokens
-        };
-
-        // Only create sheet if missing
-        if (!user.sheets || !user.sheets.spreadsheetId) {
-            const sheetId = await createInitialSheets(client);
-
-            user.sheets = {
-                spreadsheetId: sheetId
-            };
-        }
+      }
     }
 
     await user.save();
-    console.log("User saved:", email);
 
-    const token = jwt.sign(
-      { email: user.email },
+    //  IMPORTANT: include userId
+    const jwtToken = jwt.sign(
+      {
+        userId: user._id,
+        email: user.email,
+        plan: user.plan
+      },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
-    res.redirect(`${process.env.FRONTEND_URL}/login?token=${token}`);
-
-    // res.json({
-    //   message: "Login successful",
-    //   jwttoken
-    // })
-
+    // redirect with token
+    res.redirect(`${process.env.FRONTEND_URL}/login?token=${jwtToken}`);
 
   } catch (err) {
     console.error("OAuth Error:", err);

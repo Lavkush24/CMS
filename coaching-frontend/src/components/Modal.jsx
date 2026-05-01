@@ -11,6 +11,7 @@ function Modal({ title, children, onClose }) {
         <button className="close-btn" onClick={onClose}>
           Close
         </button>
+        
       </div>
     </div>
   );

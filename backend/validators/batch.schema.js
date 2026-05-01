@@ -1,17 +1,40 @@
 const Joi = require('joi');
 
+const objectIdRegex = /^[0-9a-fA-F]{24}$/;
+
 const batchSchema = Joi.object({
-  email: Joi.string().email().required(),
+  name: Joi.string()
+    .trim()
+    .min(2)
+    .max(50)
+    .required(),
 
-  name: Joi.string().required(),
+  fees: Joi.number()
+    .min(0)
+    .required(),
+  
+  standard: Joi.string()
+    .trim()
+    .max(20)
+    .required(),
+  
+  subject: Joi.string()
+    .trim()
+    .max(50)
+    .required(),
 
-  teacherId: Joi.string().required(),
+  startDate: Joi.date()
+    .required(),
 
-  fees: Joi.number().required(),
+  timing: Joi.string()
+    .trim()
+    .max(50)
+    .required(),
 
-  startDate: Joi.string().required(),
-
-  timing: Joi.string().required()
+  // optional: assign teachers during creation
+  teacherIds: Joi.array()
+    .items(Joi.string().pattern(objectIdRegex))
+    .optional()
 });
 
 module.exports = { batchSchema };

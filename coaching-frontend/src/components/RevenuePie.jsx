@@ -22,13 +22,11 @@ function RevenuePie({ data }) {
         <PieChart>
 
           <Pie
-            data={cleanData}
-            dataKey="value"
+            data={data}
+            dataKey="value"   // MUST BE value
             nameKey="name"
             outerRadius={100}
-            label={({ percent }) =>
-              `${(percent * 100).toFixed(0)}%`
-            }
+            label
           >
             {cleanData.map((_, i) => (
               <Cell key={i} fill={COLORS[i % COLORS.length]} />

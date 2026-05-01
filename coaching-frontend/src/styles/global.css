@@ -187,3 +187,8 @@ select:focus {
 .dashboard-container {
   animation: fadeIn 0.3s ease;
 }
+
+.icon {
+  height: 10px;
+  width: 10px;
+}

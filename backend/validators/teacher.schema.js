@@ -1,25 +1,43 @@
 const Joi = require('joi');
 
 const teacherSchema = Joi.object({
-  email: Joi.string().email().required(),
+  name: Joi.string()
+    .trim()
+    .min(2)
+    .max(50)
+    .required(),
 
-  name: Joi.string().required(),
+  subject: Joi.string()
+    .trim()
+    .max(50)
+    .required(),
 
-  subject: Joi.string().required(),
+  sharePercent: Joi.number()
+    .min(0)
+    .max(100)
+    .required(),
 
-  sharePercent: Joi.number().min(0).max(100).required(),
+  joinDate: Joi.date()
+    .required(),
 
-  joinDate: Joi.string().required(),
+  phone: Joi.string()
+    .pattern(/^\d{10,15}$/)
+    .required()
+    .messages({
+      'string.pattern.base': 'Phone must be 10-15 digits'
+    }),
 
-  phone: Joi.string().required(),
+  aadhar: Joi.string()
+    .pattern(/^\d{12}$/)
+    .required()
+    .messages({
+      'string.pattern.base': 'Aadhar must be 12 digits'
+    }),
 
-  aadhar: Joi.string().required(),
-
-  batchName: Joi.string().required(),
-
-  fee: Joi.number().required(),
-
-  timing: Joi.string().required()
+  // optional: assign teacher to batches
+  batchIds: Joi.array()
+    .items(Joi.string().pattern(/^[0-9a-fA-F]{24}$/))
+    .optional()
 });
 
 module.exports = { teacherSchema };

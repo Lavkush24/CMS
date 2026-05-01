@@ -19,7 +19,6 @@ function getOAuthClient() {
   );
 }
 
-
 async function createInitialSheets(auth) {
   const sheets = google.sheets({ version: 'v4', auth });
 
@@ -31,38 +30,51 @@ async function createInitialSheets(auth) {
       sheets: [
         { properties: { title: 'Students' } },
         { properties: { title: 'Teachers' } },
-        { properties: { title: 'Batches' } }
+        { properties: { title: 'Batches' } },
+        { properties: { title: 'BatchTeachers' } } 
       ]
     }
   });
 
   const spreadsheetId = res.data.spreadsheetId;
 
-  // Add headers
+  // Students
   await sheets.spreadsheets.values.update({
     spreadsheetId,
     range: 'Students!A1:I1',
     valueInputOption: 'RAW',
     resource: {
-      values: [['ID', 'Name', 'standard','Aadhar Number', 'Phone', 'BatchId', 'Fees Paid','Status','Leave Date']]
+      values: [['ID', 'Name', 'Standard', 'Aadhar Number', 'Phone', 'BatchId', 'Fees Paid', 'Status', 'Leave Date']]
     }
   });
 
+  // Teachers
   await sheets.spreadsheets.values.update({
     spreadsheetId,
     range: 'Teachers!A1:G1',
     valueInputOption: 'RAW',
     resource: {
-      values: [['ID', 'Name', 'Share Percent', 'Subject','Join Date', 'Phone', 'Aadhar number']]
+      values: [['ID', 'Name', 'Share Percent', 'Subject', 'Join Date', 'Phone', 'Aadhar Number']]
     }
   });
 
+  // Batches (FIXED)
   await sheets.spreadsheets.values.update({
     spreadsheetId,
-    range: 'Batches!A1:F1',
+    range: 'Batches!A1:E1',
     valueInputOption: 'RAW',
     resource: {
-      values: [['ID', 'Name', 'TeacherId', 'Fees', 'Start Date', 'Batch Timing']]
+      values: [['ID', 'Name', 'Fees', 'Start Date', 'Batch Timing']]
+    }
+  });
+
+  // BatchTeachers (NEW)
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: 'BatchTeachers!A1:C1',
+    valueInputOption: 'RAW',
+    resource: {
+      values: [['ID', 'BatchId', 'TeacherId']]
     }
   });
 

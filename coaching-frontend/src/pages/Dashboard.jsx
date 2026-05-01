@@ -8,31 +8,34 @@ import RevenueTrend from "../components/RevenueTrend";
 import { generateInsights } from "../utils/insights";
 
 function Dashboard() {
-  const [stats, setStats] = useState({});
-  const [salary, setSalary] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const insights = generateInsights(stats, salary);
+
+  const [batchStats, setBatchStats] = useState([]);
+  const [trendData, setTrendData] = useState([]);
+  const [teacherChart, setTeacherChart] = useState([]);
+
+  const insights = generateInsights(stats || {}, teacherChart);
 
   useEffect(() => {
     async function load() {
       try {
         setLoading(true);
 
-        const dash = await apiRequest("/dash/dashboard");
+        const [overview, batch, trend, teacherPerf] = await Promise.all([
+          apiRequest("/dash/overview"),
+          apiRequest("/chart/revenue-per-batch"),
+          apiRequest("/chart/monthly-revenue"),
+          apiRequest("/chart/teacher-performance")
+        ]);
 
-        let sal = [];
-
-        try {
-          sal = await apiRequest("/teacher/salary");
-        } catch (e) {
-          console.log("Salary locked (premium)");
-        }
-
-        setStats(dash || {});
-        setSalary(sal || []);
+        setStats(overview || {});
+        setBatchStats(batch || []);
+        setTrendData(trend || []);
+        setTeacherChart(teacherPerf || []);
 
       } catch (err) {
-        console.error(err);
+        console.error("Dashboard load error:", err);
       } finally {
         setLoading(false);
       }
@@ -41,65 +44,10 @@ function Dashboard() {
     load();
   }, []);
 
+
   // console.log(stats);
-  //  Safe calculations
-  // const totalRevenue = salary.reduce(
-  //   (sum, t) => sum + (t.totalRevenue || 0),
-  //   0
-  // );
-
-  // const topTeacher = [...salary].sort(
-  //   (a, b) => b.totalRevenue - a.totalRevenue
-  // )[0];
-
-
-  function DashboardSkeleton() {
-    return (
-      <div className="dashboard-container">
-
-        {/* KPI skeleton */}
-        <div className="kpi-grid">
-          {[...Array(4)].map((_, i) => (
-            <div className="kpi-card" key={i}>
-              <div className="skeleton" style={{ height: 14, width: "40%" }} />
-              <div className="skeleton" style={{ height: 28, marginTop: 10 }} />
-            </div>
-          ))}
-        </div>
-
-        {/* Charts */}
-        <div className="section grid-2">
-
-          <div className="chart-card">
-            <div className="skeleton" style={{ height: 20, width: "50%" }} />
-            <div className="skeleton" style={{ height: 200, marginTop: 10 }} />
-          </div>
-
-          <div className="chart-card">
-            <div className="skeleton" style={{ height: 20, width: "50%" }} />
-            <div className="skeleton" style={{ height: 200, marginTop: 10 }} />
-          </div>
-
-          <div className="chart-card full">
-            <div className="skeleton" style={{ height: 20, width: "50%" }} />
-            <div className="skeleton" style={{ height: 200, marginTop: 10 }} />
-          </div>
-
-        </div>
-
-        {/* Insights */}
-        <div className="insight-card">
-          <div className="skeleton" style={{ height: 16, width: "30%" }} />
-          <div className="skeleton" style={{ height: 14, marginTop: 10 }} />
-          <div className="skeleton" style={{ height: 14, marginTop: 8 }} />
-        </div>
-
-      </div>
-    );
-  }
-
-  if (loading) return <DashboardSkeleton />;
-
+  if (loading || !stats) return <DashboardSkeleton />;
+  // console.log(teacherChart);
 
   return (
     <div className="dashboard-container">
@@ -112,7 +60,7 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* KPI SECTION */}
+      {/* KPI */}
       <div className="kpi-grid">
 
         <div className="kpi-card">
@@ -130,41 +78,92 @@ function Dashboard() {
         <div className="kpi-card revenue">
           <IndianRupee size={20} />
           <h4>Total Revenue</h4>
-          <p>₹{stats?.summary.totalRevenue}</p>
+          <p>₹{stats?.summary.totalRevenue || 0}</p>
         </div>
 
         <div className="kpi-card highlight">
           <TrendingUp size={20} />
-          <h4>Top Teacher</h4>
-          <p>{stats.topTeacher?.name || "N/A"}</p>
-          <small>₹{stats.topTeacher?.revenue || 0}</small>
+          <h4>Top Batch</h4>
+          <p>{batchStats[0]?.batchName || "N/A"}</p>
+          <small>₹{batchStats[0]?.revenue || 0}</small>
         </div>
 
       </div>
 
-      {/* CHART SECTION */}
-     <div className="section grid-2">
+      {/* CHARTS */}
+      <div className="section grid-2">
 
+        {/* Teacher Chart */}
         <div className="chart-card">
           <h3>Revenue by Teacher</h3>
-          <RevenueChart data={salary} />
+          <RevenueChart
+            data={teacherChart.map(t => ({
+              name: t.name,
+              totalRevenue: t.revenue
+            }))}
+          />
         </div>
 
+        {/* Pie */}
         <div className="chart-card">
           <h3>Revenue Distribution</h3>
-          <RevenuePie data={salary} />
-        </div>  
+          <RevenuePie
+            data={teacherChart.map(t => ({
+              name: t.name,
+              value: t.revenue
+            }))}
+          />
+        </div>
 
+        {/* Trend */}
         <div className="chart-card full">
           <h3>Revenue Growth</h3>
-          <RevenueTrend total={stats.summary.totalRevenue} />
+          <RevenueTrend data={trendData} />
+        </div>
+
+        {/* Batch Chart */}
+        <div className="chart-card">
+          <h3>Batch Performance</h3>
+          <RevenueChart
+            data={batchStats.map(b => ({
+              name: b.batchName,
+              totalRevenue: b.revenue
+            }))}
+          />
+        </div>
+
+        {/* Batch Table */}
+        <div className="chart-card full">
+          <h3>Batch Details</h3>
+
+          <table className="batch-table">
+            <thead>
+              <tr>
+                <th>Batch</th>
+                <th>Students</th>
+                <th>Revenue</th>
+                <th>Teachers</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {batchStats.map(b => (
+                <tr key={b.batchId}>
+                  <td>{b.batchName}</td>
+                  <td>{b.totalStudents}</td>
+                  <td>₹{b.revenue}</td>
+                  <td>{b.teachers?.join(", ") || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
         </div>
 
       </div>
 
       {/* INSIGHTS */}
       <div className="insight-card">
-
         <h3>Smart Insights</h3>
 
         <div className="insight-list">
@@ -174,11 +173,14 @@ function Dashboard() {
             </div>
           ))}
         </div>
-
       </div>
 
     </div>
   );
+}
+
+function DashboardSkeleton() {
+  return <div className="dashboard-container">Loading...</div>;
 }
 
 export default Dashboard;

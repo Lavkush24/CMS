@@ -1,169 +1,261 @@
 const express = require('express');
 const router = express.Router();
-const { google } = require('googleapis');
-const { getOAuthClient } = require('../services/google');
-const User = require('../models/User');
-const { getSheetsClient, appendValues, getValues } = require('../services/googleSheets');
+const Teacher = require('../models/Teacher');
+const Batch = require('../models/Batch');
+const BatchTeacher = require('../models/BatchTeacher');
+const StudentBatch = require('../models/StudentBatch');
+const { pushJob } = require('../services/syncQueue');
+const Student = require('../models/Student');
 const authMiddleware = require('../middleware/authmiddleware');
 const requirePlan = require('../middleware/requirePlan');
 
 
-router.post('/add', authMiddleware,async (req, res) => {
+router.post('/add', authMiddleware, async (req, res) => {
   try {
-    const { email, name, subject, sharePercent, joinDate, phone, aadhar, batchName, fee, timing } = req.body;
+    const {
+      name, subject, sharePercent,
+      joinDate, phone, aadhar,
+      mode, batchId, batchName, fees, timing
+    } = req.body;
 
-    // const user = await User.findOne({ email });
-    const user = req.user;
-    if (!user) return res.status(404).send("User not found");
-
-    const sheets = getSheetsClient(user.tokens);
-
-    // 1. create teacher
-    const teacherId = 'T' + Date.now();
-    await appendValues(sheets, user.sheets.spreadsheetId, 'Teachers!A1', [[teacherId, name, sharePercent, subject, joinDate, phone, aadhar]]);
-
-    // 2. Create Batch linked to teacher
-    const batchId = "B" + Date.now();
-    await appendValues(sheets, user.sheets.spreadsheetId, 'Batches!A1', [[batchId, batchName, teacherId, fee, joinDate, timing]]);
-
-    res.json({
-      message: "Teacher and batch created",
-      teacherId,
-      batchId
+    // 1. Create teacher
+    const teacher = await Teacher.create({
+      name,
+      subject,
+      sharePercent,
+      joinDate,
+      phone,
+      aadharNumber: aadhar,
+      ownerId: req.user.id
     });
 
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Error adding teacher + batch");
-  }
-});
+    let batch;
 
+    // 2. Assign batch
+    if (mode === "existing") {
+      batch = await Batch.findOne({
+        _id: batchId,
+        ownerId: req.user.id
+      });
 
-router.get('/list', authMiddleware,async (req, res) => {
-  try {
-    // const { email } = req.query;
-
-    // const user = await User.findOne({ email });
-    const user = req.user;
-    if (!user) return res.status(404).send("User not found");
-
-    const sheets = getSheetsClient(user.tokens);
-
-    const rows = await getValues(sheets, user.sheets.spreadsheetId, 'Teachers!A:G');
-
-    if (rows.length === 0) return res.json([]);
-
-    const data = rows.slice(1).map(row => ({
-      id: row[0] || "",
-      name: row[1] || "",
-      rate: Number(row[2]) || 0,
-      subject: row[3] || "",
-      joinDate: row[4] || "",
-      Phone: row[5] || "",
-      aadhar: row[6] || ""
-    }));
-
-    res.json(data);
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Error fetching teachers");
-  }
-});
-
-
-router.get('/salary', authMiddleware,requirePlan("PRO"),async (req, res) => {
-  try {
-    // const { email } = req.query;
-
-    // const user = await User.findOne({ email });
-    const user = req.user;
-    if (!user) return res.status(404).send("User not found");
-
-    const sheets = getSheetsClient(user.tokens);
-
-    // 1. Fetch all data
-    const [students, batches, teachers] = await Promise.all([
-      getValues(sheets, user.sheets.spreadsheetId, 'Students!A:I'),
-      getValues(sheets, user.sheets.spreadsheetId, 'Batches!A:G'),
-      getValues(sheets, user.sheets.spreadsheetId, 'Teachers!A:H')
-    ]);
-
-    // 2. Build maps
-
-    // batchId → teacherId
-    const batchToTeacher = {};
-    batches.slice(1).forEach(row => {
-      const batchId = row[0];
-      const teacherId = row[2];
-      if (batchId && teacherId) {
-        batchToTeacher[batchId] = teacherId;
+      if (!batch) {
+        return res.status(400).json({ error: "Invalid batchId" });
       }
-    });
 
-    // teacherId → {name, sharePercent}
-    const teacherInfo = {};
-    teachers.slice(1).forEach(row => {
-      const teacherId = row[0];
-      const name = row[1];
-      const share = Number(row[2]) || 0;
+    } else if(mode === "new"){
+      // create new batch
 
-      if (teacherId) {
-        teacherInfo[teacherId] = {
-          name,
-          share
-        };
+      if (!batchName || !fees || !timing) {
+        return res.status(400).json({
+          error: "Missing batch data"
+        });
       }
-    });
 
-    // 3. Calculate revenue per teacher
-    const teacherRevenue = {};
-
-    students.slice(1).filter(row => (row[7] || "ACTIVE").trim() === "ACTIVE").forEach(row => {
-      const batchId = row[5];
-      const feePaid = Number(row[6]) || 0;
-
-      const teacherId = batchToTeacher[batchId];
-
-      if (!teacherId) return;
-
-      if (!teacherRevenue[teacherId]) {
-        teacherRevenue[teacherId] = 0;
-      } 
-
-      teacherRevenue[teacherId] += feePaid;
-    });
-
-    // 4. Build final response
-    const result = [];
-
-    for (const teacherId in teacherRevenue) {
-      const totalRevenue = teacherRevenue[teacherId];
-      const info = teacherInfo[teacherId] || {};
-
-      const share = info.share || 0;
-
-      const teacherEarning = totalRevenue * (1 - share / 100);
-      const ownerEarning = totalRevenue * (share / 100);
-
-      result.push({
-        teacherId,
-        name: info.name || "Unknown",
-        totalRevenue,
-        teacherEarning,
-        ownerEarning
+      batch = await Batch.create({
+        name: batchName,
+        fees: fees,
+        startDate: joinDate,
+        batchTiming: timing,
+        ownerId: req.user.id
       });
     }
+
+    // 3. Create relation
+    if(batch) {
+      await BatchTeacher.create({
+        batchId: batch._id,
+        teacherId: teacher._id,
+        ownerId: req.user.id
+      });
+    }
+
+    //  Sync (optional)
+    pushJob({
+      type: "CREATE_TEACHER",
+      userId: req.user.id,
+      data: teacher
+    });
+
+    res.json({
+      message: "Teacher added and assigned",
+      teacher,
+      batch
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error adding teacher" });
+  }
+});
+
+
+router.get('/list', authMiddleware, async (req, res) => {
+  try {
+    const teachers = await Teacher.find({
+      ownerId: req.user.id
+    });
+
+    res.json(teachers);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error fetching teachers" });
+  }
+});
+
+
+router.get('/salary', authMiddleware, requirePlan("PRO"), async (req, res) => {
+  try {
+    const ownerId = req.user.id;
+
+    // 1. Fetch data
+    const [studentBatches, batchTeachers, teachers] = await Promise.all([
+      StudentBatch.find({ ownerId, status: "ACTIVE" }),
+      BatchTeacher.find({ ownerId }),
+      Teacher.find({ ownerId })
+    ]);
+
+    // 2. batchId → teacherIds[]
+    const batchToTeachers = {};
+
+    batchTeachers.forEach(bt => {
+      const batchId = bt.batchId.toString();
+
+      if (!batchToTeachers[batchId]) {
+        batchToTeachers[batchId] = [];
+      }
+
+      batchToTeachers[batchId].push(bt.teacherId.toString());
+    });
+
+    // 3. teacherId → { name, share }
+    const teacherMap = {};
+
+    teachers.forEach(t => {
+      teacherMap[t._id.toString()] = {
+        name: t.name,
+        share: t.sharePercent || 0
+      };
+    });
+
+    // 4. Calculate revenue
+    const teacherStats = {};
+
+    studentBatches.forEach(sb => {
+      const batchId = sb.batchId.toString();
+      const fee = sb.feesPaid || 0;
+
+      const teacherIds = batchToTeachers[batchId] || [];
+
+      teacherIds.forEach(teacherId => {
+        const teacher = teacherMap[teacherId];
+        if (!teacher) return;
+
+        if (!teacherStats[teacherId]) {
+          teacherStats[teacherId] = {
+            totalRevenue: 0,
+            teacherEarning: 0,
+            ownerEarning: 0
+          };
+        }
+
+        const share = teacher.share;
+
+        const teacherCut = fee * (share / 100);
+        const ownerCut = fee * (1 - share / 100);
+
+        teacherStats[teacherId].totalRevenue += fee;
+        teacherStats[teacherId].teacherEarning += teacherCut;
+        teacherStats[teacherId].ownerEarning += ownerCut;
+      });
+    });
+
+    // 5. Format result
+    const result = Object.entries(teacherStats).map(([teacherId, stats]) => ({
+      teacherId,
+      name: teacherMap[teacherId]?.name || "Unknown",
+      totalRevenue: stats.totalRevenue,
+      teacherEarning: stats.teacherEarning,
+      ownerEarning: stats.ownerEarning
+    }));
 
     res.json(result);
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({
-      message: "Error calculating salary"
-    });
+    res.status(500).json({ error: "Error calculating salary" });
   }
 });
 
 
-module.exports = router ;
+
+router.put('/update/:id', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const update = {};
+
+    const {
+      name,
+      subject,
+      sharePercent,
+      phone,
+      aadhar
+    } = req.body;
+
+    if (name) update.name = name;
+    if (subject) update.subject = subject;
+    if (sharePercent !== undefined) update.sharePercent = sharePercent;
+    if (phone) update.phone = phone;
+    if (aadhar) update.aadharNumber = aadhar;
+
+    const teacher = await Teacher.findOneAndUpdate(
+      { _id: id, ownerId: req.user.id },
+      update,
+      { new: true }
+    );
+
+    if (!teacher) {
+      return res.status(404).json({ error: "Teacher not found" });
+    }
+
+    res.json({
+      message: "Teacher updated",
+      teacher
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: "Error updating teacher" });
+  }
+});
+
+
+router.delete('/delete/:id', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // delete relations first
+    await BatchTeacher.deleteMany({
+      teacherId: id,
+      ownerId: req.user.id
+    });
+
+    const teacher = await Teacher.findOneAndDelete({
+      _id: id,
+      ownerId: req.user.id
+    });
+
+    if (!teacher) {
+      return res.status(404).json({ error: "Teacher not found" });
+    }
+
+    res.json({
+      message: "Teacher deleted"
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: "Error deleting teacher" });
+  }
+});
+
+module.exports = router;

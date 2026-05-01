@@ -5,15 +5,14 @@ async function authMiddleware(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
 
-    // Step 1: Check header exists
+    // 1. Check header
     if (!authHeader) {
-        console.log(authHeader);
       return res.status(401).json({
         error: "No authorization header"
       });
     }
 
-    // Step 2: Extract token
+    // 2. Extract token
     const parts = authHeader.split(" ");
 
     if (parts.length !== 2 || parts[0] !== "Bearer") {
@@ -24,11 +23,13 @@ async function authMiddleware(req, res, next) {
 
     const token = parts[1];
 
-    // Step 3: Verify token
+    // 3. Verify JWT
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Step 4: Find user in DB
-    const user = await User.findOne({ email: decoded.email });
+    // IMPORTANT: use userId (not email)
+    const user = await User.findById(decoded.userId).select(
+      "_id email plan sheets"
+    );
 
     if (!user) {
       return res.status(401).json({
@@ -36,8 +37,13 @@ async function authMiddleware(req, res, next) {
       });
     }
 
-    // Attach full user
-    req.user = user;
+    // 4. Attach minimal user context
+    req.user = {
+      id: user._id,
+      email: user.email,
+      plan: user.plan,
+      sheetId: user.sheets?.spreadsheetId || null
+    };
 
     next();
 

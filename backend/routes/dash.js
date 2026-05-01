@@ -1,146 +1,128 @@
 const express = require('express');
 const router = express.Router();
-const { google } = require('googleapis');
-const { getOAuthClient } = require('../services/google');
-const User = require('../models/User');
-const { getSheetsClient, getValues } = require('../services/googleSheets');
+
 const authMiddleware = require('../middleware/authmiddleware');
+const requirePlan = require('../middleware/requirePlan');
+
+const Student = require('../models/Student');
+const Teacher = require('../models/Teacher');
+const Batch = require('../models/Batch');
+const BatchTeacher = require('../models/BatchTeacher');
+const StudentBatch = require('../models/StudentBatch');
 
 
-router.get('/dashboard', authMiddleware,async (req, res) => {
+router.get('/overview', authMiddleware, requirePlan("PRO"), async (req, res) => {
   try {
-    const user = req.user;
-    if (!user) return res.status(404).send("User not found");
+    const ownerId = req.user.id;
 
-    // const user = await User.findOne({ email });
-
-    const sheets = getSheetsClient(user.tokens);
-
-    // Fetch all data in parallel
-    const [students, batches, teachers] = await Promise.all([
-      getValues(sheets, user.sheets.spreadsheetId, 'Students!A:I'),
-      getValues(sheets, user.sheets.spreadsheetId, 'Batches!A:G'),
-      getValues(sheets, user.sheets.spreadsheetId, 'Teachers!A:H')
+    // 1. Parallel queries
+    const [
+      totalStudents,
+      totalTeachers,
+      totalBatches,
+      studentBatches,
+      relations,
+      teachers
+    ] = await Promise.all([
+      Student.countDocuments({ ownerId, status: "ACTIVE" }),
+      Teacher.countDocuments({ ownerId }),
+      Batch.countDocuments({ ownerId }),
+      StudentBatch.find({ ownerId, status: "ACTIVE" }),
+      BatchTeacher.find({ ownerId }),
+      Teacher.find({ ownerId })
     ]);
 
-    // Remove headers
-    const studentRows = students.slice(1);
-    const batchRows = batches.slice(1);
-    const teacherRows = teachers.slice(1);
-
-    // Summary
-    const totalStudents = studentRows.length;
-    const totalTeachers = teacherRows.length;
-    const totalBatches = batchRows.length;
-
+    // 2. Total Revenue (from StudentBatch)
     let totalRevenue = 0;
 
-    // batchId → {name, teacherId}
-    const batchMap = {};
-    batchRows.forEach(row => {
-      batchMap[row[0]] = {
-        name: row[1],
-        teacherId: row[2]
-      };
+    studentBatches.forEach(sb => {
+      totalRevenue += sb.feesPaid || 0;
     });
 
-    // teacherId → {name, share}
+    // 3. batchId → teacherIds[]
+    const batchToTeachers = {};
+
+    relations.forEach(r => {
+      const bId = r.batchId.toString();
+
+      if (!batchToTeachers[bId]) {
+        batchToTeachers[bId] = [];
+      }
+
+      batchToTeachers[bId].push(r.teacherId.toString());
+    });
+
+    // 4. teacherId → { name, share }
     const teacherMap = {};
-    teacherRows.forEach(row => {
-      teacherMap[row[0]] = {
-        name: row[1],
-        share: Number(row[2]) || 0
+
+    teachers.forEach(t => {
+      teacherMap[t._id.toString()] = {
+        name: t.name,
+        share: t.sharePercent || 0
       };
     });
 
-    // Revenue aggregation
+    // 5. Teacher revenue calculation
     const teacherRevenue = {};
-    const batchStatsMap = {};
 
-    studentRows.forEach(row => {
-      const batchId = row[5];
-      const feePaid = Number(row[6]) || 0;
+    studentBatches.forEach(sb => {
+      const batchId = sb.batchId.toString();
+      const fee = sb.feesPaid || 0;
 
-      totalRevenue += feePaid;
+      const teacherIds = batchToTeachers[batchId] || [];
 
-      // Batch stats
-      if (!batchStatsMap[batchId]) {
-        batchStatsMap[batchId] = {
-          students: 0,
-          revenue: 0
-        };
-      }
+      teacherIds.forEach(tid => {
+        const teacher = teacherMap[tid];
+        if (!teacher) return;
 
-      batchStatsMap[batchId].students += 1;
-      batchStatsMap[batchId].revenue += feePaid;
+        if (!teacherRevenue[tid]) {
+          teacherRevenue[tid] = 0;
+        }
 
-      // Teacher revenue
-      const teacherId = batchMap[batchId]?.teacherId;
-
-      if (!teacherId) return;
-
-      if (!teacherRevenue[teacherId]) {
-        teacherRevenue[teacherId] = 0;
-      }
-
-      teacherRevenue[teacherId] += feePaid;
+        // Only count teacher share
+        teacherRevenue[tid] += fee * (teacher.share / 100);
+      });
     });
 
-    // Top teacher
+    // 6. Find top teacher
     let topTeacherId = null;
     let maxRevenue = 0;
 
-    for (const tId in teacherRevenue) {
-      if (teacherRevenue[tId] > maxRevenue) {
-        maxRevenue = teacherRevenue[tId];
-        topTeacherId = tId;
+    for (const tid in teacherRevenue) {
+      if (teacherRevenue[tid] > maxRevenue) {
+        maxRevenue = teacherRevenue[tid];
+        topTeacherId = tid;
       }
     }
 
-    const topTeacher = topTeacherId
-      ? {
-          teacherId: topTeacherId,
-          name: teacherMap[topTeacherId]?.name || "Unknown",
-          revenue: maxRevenue
-        }
-      : null;
+    let topTeacher = null;
 
-    // Batch stats array
-    const batchStats = Object.keys(batchStatsMap).map(batchId => ({
-      batchId,
-      batchName: batchMap[batchId]?.name || "Unknown",
-      students: batchStatsMap[batchId].students,
-      revenue: batchStatsMap[batchId].revenue
-    }));
+    if (topTeacherId) {
+      topTeacher = {
+        id: topTeacherId,
+        name: teacherMap[topTeacherId]?.name || "Unknown",
+        revenue: Math.round(maxRevenue)
+      };
+    }
 
-    // Recent students (last 5)
-    const recentStudents = studentRows.slice(-5).map(row => ({
-      name: row[1],
-      batchId: row[5],
-      feePaid: Number(row[6]) || 0
-    }));
-
-    //total revenue by each teacher
-    
-
-    // Final response
+    // 7. Response
     res.json({
       summary: {
         totalStudents,
         totalTeachers,
         totalBatches,
-        totalRevenue
+        totalRevenue: Math.round(totalRevenue)
       },
-      topTeacher,
-      batchStats,
-      recentStudents,
+      topTeacher
     });
 
   } catch (err) {
     console.error(err);
-    res.status(500).send("Error loading dashboard");
+    res.status(500).json({
+      error: "Error fetching dashboard"
+    });
   }
 });
 
 
-module.exports = router ;
+module.exports = router;

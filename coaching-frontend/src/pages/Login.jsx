@@ -1,25 +1,42 @@
 import { useEffect } from "react";
-import { setToken } from "../auth/auth";
-import { useNavigate } from "react-router-dom";
+import { setToken, getToken } from "../auth/auth";
+import { useNavigate, useLocation } from "react-router-dom";
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    const token = new URLSearchParams(window.location.search).get("token");
+    // 🔹 already logged in
+    const existingToken = getToken();
+    if (existingToken) {
+      navigate("/dashboard");
+      return;
+    }
+
+    // 🔹 extract token from URL
+    const params = new URLSearchParams(location.search);
+    const token = params.get("token");
 
     if (token) {
       setToken(token);
+
+      // 🔥 remove token from URL
+      window.history.replaceState({}, document.title, "/login");
+
       navigate("/dashboard");
     }
-  }, []);
+  }, [location, navigate]);
 
   return (
     <div style={styles.container}>
       <h1>Coaching Manager</h1>
-      <button onClick={() => {
-        window.location.href = `${import.meta.env.VITE_API_URL}/auth/login`;
-      }}>
+
+      <button
+        onClick={() => {
+          window.location.href = `${import.meta.env.VITE_API_URL}/auth/login`;
+        }}
+      >
         Login with Google
       </button>
     </div>

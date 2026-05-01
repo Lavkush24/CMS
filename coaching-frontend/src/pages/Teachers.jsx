@@ -11,28 +11,49 @@ function Teachers() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [batches, setBatches] = useState([]);
+  const [mode, setMode] = useState("none"); // none | existing | new
 
   const { showToast } = useToast();
 
   //  LOAD DATA
   async function loadData() {
-      try {
-          setLoading(true);
-          
-          const [t, s] = await Promise.all([
-              apiRequest("/teacher/list"),
-              apiRequest("/teacher/salary")
-            ]);
-            
-            setTeachers(t);
-            setSalary(s);
-            
-        } catch {
-            showToast("Failed to load teachers", "error");
-        } finally {
-            setLoading(false);
-        }
+    try {
+        setLoading(true);
+
+        const [t, s, b] = await Promise.all([
+            apiRequest("/teacher/list"),
+            apiRequest("/teacher/salary"),
+            apiRequest("/batch/list")
+        ]);
+
+        //  normalize teachers
+        const normalizedTeachers = t.map(t => ({
+            id: t._id,
+            name: t.name,
+            subject: t.subject,
+            sharePercent: t.sharePercent,
+            joinDate: t.joinDate,
+            phone: t.phone,
+            aadhar: t.aadharNumber
+        }));
+
+        setTeachers(normalizedTeachers);
+        setSalary(s);
+        setBatches(
+            b.map(batch => ({
+                id: batch._id,
+                name: batch.name
+            }))
+        );
+
+    } catch {
+        showToast("Failed to load teachers", "error");
+    } finally {
+        setLoading(false);
     }
+  }
     
     useEffect(() => {
         loadData();
@@ -58,27 +79,102 @@ function Teachers() {
 
     const form = e.target;
 
-    const newTeacher = {
-      name: form.name.value,
-      sharePercent: Number(form.sharePercent.value),
-      subject: form.subject.value,
-      joinDate: form.joinDate.value,
-      phone: form.phone.value,
-      aadhar: form.aadhar.value,
-      batchName: form.batchName.value,
-      fee: Number(form.fee.value),
-      timing: form.timing.value
+    const payload = {
+        name: form.name.value.trim(),
+        subject: form.subject.value.trim(),
+        sharePercent: Number(form.sharePercent.value) || 0,
+        joinDate: form.joinDate.value,
+        phone: form.phone.value.trim(),
+        aadhar: form.aadhar.value.trim(),
+        mode
+    };
+
+    //  attach batch data based on mode
+    if (mode === "existing") {
+        payload.batchId = form.batchId.value;
+    }
+
+    if (mode === "new") {
+        payload.batchName = form.batchName.value.trim();
+        payload.fees = Number(form.fees.value) || 0;
+        payload.startDate = form.startDate.value;
+        payload.timing = form.timing.value.trim();
+    }
+
+    try {
+        await apiRequest("/teacher/add", "POST", payload);
+
+        setShowModal(false);
+        setMode("none"); // reset
+
+        loadData();
+        showToast("Teacher added successfully");
+
+    } catch (err) {
+        showToast(err.message || "Failed to add teacher", "error");
+    }
+  }
+
+  async function assignTeacher(e) {
+    e.preventDefault();
+
+    const form = e.target;
+
+    const payload = {
+        batchId: form.batchId.value,
+        teacherId: form.teacherId.value
     };
 
     try {
-      await apiRequest("/teacher/add", "POST", newTeacher);
+        await apiRequest("/batch/assign-teacher", "POST", payload);
 
-      setShowModal(false);
-      loadData();
+        setShowAssignModal(false);
+        showToast("Teacher assigned successfully");
 
-      showToast("Teacher added successfully");
+    } catch (err) {
+        showToast(err.message || "Assignment failed", "error");
+    }
+  }
+
+
+  async function updateTeacher(e) {
+    e.preventDefault();
+
+    const form = e.target;
+
+    const payload = {
+        name: form.name.value.trim(),
+        subject: form.subject.value.trim(),
+        sharePercent: Number(form.sharePercent.value) || 0,
+        phone: form.phone.value.trim(),
+        aadhar: form.aadhar.value.trim()
+    };
+
+    try {
+        await apiRequest(`/teacher/update/${selectedTeacher.id}`, "PUT", payload);
+
+        setSelectedTeacher(null);
+        loadData();
+
+        showToast("Teacher updated");
+
+    } catch (err) {
+        showToast("Update failed", "error");
+    }
+  }
+
+
+  async function deleteTeacher(id) {
+    if (!window.confirm("Delete this teacher?")) return;
+
+    try {
+        await apiRequest(`/teacher/delete/${id}`, "DELETE");
+
+        loadData();
+        showToast("Teacher deleted");
+
     } catch {
-      showToast("Failed to add teacher", "error");
+        showToast("Delete failed", "error");
     }
   }
 
@@ -136,6 +232,10 @@ function Teachers() {
                 <p>Manage teachers, batches and earnings</p>
             </div>
 
+            <button onClick={() => setShowAssignModal(true)}>
+                Assign Teacher
+            </button>
+
             <button onClick={() => setShowModal(true)}>
                 + Add Teacher
             </button>
@@ -150,20 +250,86 @@ function Teachers() {
                 <form onSubmit={addTeacher} className="grid-form">
 
                     <input name="name" placeholder="Name" required />
-                    <input name="subject" placeholder="Subject" />
-                    <input name="sharePercent" placeholder="Share %" />
+                    <input name="subject" placeholder="Subject" required />
+                    <input name="sharePercent" placeholder="Share %" required />
 
-                    <input type="date" name="joinDate" />
-                    <input name="phone" placeholder="Phone" />
-                    <input name="aadhar" placeholder="Aadhar" />
+                    <input type="date" name="joinDate" required />
+                    <input name="phone" placeholder="Phone" required />
+                    <input name="aadhar" placeholder="Aadhar" required />
 
-                    <input name="batchName" placeholder="Batch Name" />
-                    <input name="fee" placeholder="Fee" />
-                    <input name="timing" placeholder="Timing" />
+
+                    <div className="form-group">
+                        <label>Batch Option</label>
+
+                        <select value={mode} onChange={(e) => setMode(e.target.value)}>
+                            <option value="none">No Batch</option>
+                            <option value="existing">Assign Existing Batch</option>
+                            <option value="new">Create New Batch</option>
+                        </select>
+                    </div>
+
+                    {mode === "existing" && (
+                        <select name="batchId" required>
+                            <option value="">Select Batch</option>
+                            {batches.map(b => (
+                            <option key={b.id} value={b.id}>{b.name}</option>
+                            ))}
+                        </select>
+                    )}
+
+                    {mode === "new" && (
+                        <>
+                            <input name="batchName" placeholder="Batch Name" required />
+                            <input name="fees" placeholder="Fees" required />
+                            <input type="date" name="startDate" required />
+                            <input name="timing" placeholder="Timing" required />
+                        </>
+                    )}
 
                     <div className="form-actions">
-                    <button type="submit">Add Teacher</button>
-                    <button onClick={() => setShowModal(false)}>Cancel</button>
+                        <button type="submit">Add Teacher</button>
+                        <button type="button" onClick={() => setShowModal(false)}>Cancel</button>
+                    </div>
+
+
+
+                </form>
+
+                </div>
+            </div>
+        )}
+
+        {showAssignModal && (
+            <div className="full-modal">
+                <div className="modal-content">
+
+                <h2>Assign Teacher to Batch</h2>
+
+                <form onSubmit={assignTeacher} className="grid-form">
+
+                    <select name="teacherId" required>
+                    <option value="">Select Teacher</option>
+                    {teachers.map(t => (
+                        <option key={t.id} value={t.id}>
+                        {t.name}
+                        </option>
+                    ))}
+                    </select>
+
+                    <select name="batchId" required>
+                    <option value="">Select Batch</option>
+                    {batches.map(b => (
+                        <option key={b.id} value={b.id}>
+                        {b.name}
+                        </option>
+                    ))}
+                    </select>
+
+                    <div className="form-actions">
+                    <button type="submit">Assign</button>
+                    <button type="button" onClick={() => setShowAssignModal(false)}>
+                        Cancel
+                    </button>
                     </div>
 
                 </form>
@@ -218,7 +384,7 @@ function Teachers() {
                 </div>
 
                 <span className={`badge ${t.totalRevenue > 5000 ? "high" : "low"}`}>
-                {t.rate}%
+                {t.sharePercent}%
                 </span>
             </div>
 
@@ -240,7 +406,6 @@ function Teachers() {
                 <strong>₹{t.ownerEarning}</strong>
                 </div>
             </div>
-
             </div>
         ))}
         </div>
@@ -249,37 +414,32 @@ function Teachers() {
         {/* DETAILS MODAL */}
         {selectedTeacher && (
         <Modal
-            title={selectedTeacher.name}
+            title="Edit Teacher"
             onClose={() => setSelectedTeacher(null)}
-        >
-            <div className="details">
+            >
+            <form onSubmit={updateTeacher} className="grid-form">
 
-            <div className="detail-row">
-                <span>Subject</span>
-                <strong>{selectedTeacher.subject || "N/A"}</strong>
-            </div>
+                <input name="name" defaultValue={selectedTeacher.name} />
+                <input name="subject" defaultValue={selectedTeacher.subject} />
+                <input name="sharePercent" defaultValue={selectedTeacher.sharePercent} />
+                <input name="phone" defaultValue={selectedTeacher.phone} />
+                <input name="aadhar" defaultValue={selectedTeacher.aadhar} />
 
-            <div className="detail-row">
-                <span>Share</span>
-                <strong>{selectedTeacher.rate}%</strong>
+                <div className="form-actions">
+                <button type="submit">Update</button>
+                <div>
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        deleteTeacher(selectedTeacher.id);
+                    }}
+                    >
+                    Delete
+                </button>
             </div>
+                </div>
 
-            <div className="detail-row">
-                <span>Join Date</span>
-                <strong>{selectedTeacher.joinDate || "N/A"}</strong>
-            </div>
-
-            <div className="detail-row">
-                <span>Phone</span>
-                <strong>{selectedTeacher.phone || "N/A"}</strong>
-            </div>
-
-            <div className="detail-row">
-                <span>Aadhar</span>
-                <strong>{selectedTeacher.aadhar || "N/A"}</strong>
-            </div>
-
-            </div>
+            </form>
         </Modal>
         )}
     </div>

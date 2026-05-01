@@ -72,6 +72,7 @@
 /* Footer */
 .card-footer {
   margin-top: 12px;
+  margin-bottom: 12px;
 }
 
 
@@ -230,3 +231,109 @@
   margin-top: 40px;
   color: var(--subtext);
 }
+
+.batch-select {
+  margin-bottom: 10px;
+}
+
+.selected-batches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.batch-chip {
+  background: #eef2ff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.batch-chip button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: red;
+}
+
+.batch-list {
+  background: var(--card-bg);
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.batch-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  background: var(--card-bg);  
+
+  padding: 12px 14px;
+  border-radius: 8px;
+  gap: 12px;
+
+  transition: all 0.2s ease;
+}
+
+.batch-item {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--border);
+}
+
+.batch-item-list {
+  margin-bottom: 12px;
+}
+
+.batch-name {
+  font-weight: 600;
+}
+
+.batch-meta {
+  font-size: 12px;
+  color: var(--subtext);
+}
+
+.no-batch {
+  font-size: 12px;
+  color: #999;
+}
+
+.batch-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 400px;
+}
+
+.add-batch {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+}
+
+.modal-actions {
+  margin-top: 20px;
+  text-align: right;
+}
+
+.batch-section {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+
+

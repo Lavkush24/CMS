@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema({
     scope: String,
     token_type: String,
     expiry_date: Number,
-  },
+  },  
 
   sheets: {
     spreadsheetId: String,
@@ -17,13 +17,14 @@ const userSchema = new mongoose.Schema({
 
   plan: {
     type: String,
-    default: "FREE" 
+    default: "FREE"
   },
 
   planExpiresAt: {
     type: Date,
     default: null
   }
-});
+
+}, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

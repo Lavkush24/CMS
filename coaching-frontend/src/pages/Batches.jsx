@@ -15,17 +15,64 @@ function Batches() {
 
   async function loadData() {
     try {
-        setLoading(true);
+      setLoading(true);
+
       const [b, t] = await Promise.all([
         apiRequest("/batch/list"),
         apiRequest("/teacher/list")
       ]);
-      setBatches(b);
-      setTeachers(t);
-      setLoading(false);
-      
+
+      // normalize batches
+      const normalizedBatches = b.map(batch => ({
+        id: batch._id,
+        name: batch.name,
+        fees: batch.fees,
+        standard: batch.standard,
+        subject: batch.subject,
+        timing: batch.batchTiming,
+        teachers: batch.teachers || [] // IMPORTANT
+      }));
+
+      //  normalize teachers
+      const normalizedTeachers = t.map(t => ({
+        id: t._id,
+        name: t.name
+      }));
+
+      setBatches(normalizedBatches);
+      setTeachers(normalizedTeachers);
+
     } catch {
       showToast("Failed to load batches", "error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function addBatch(e) {
+    e.preventDefault();
+
+    const form = e.target;
+
+    const payload = {
+      name: form.name.value.trim(),
+      fees: Number(form.fees.value) || 0,
+      standard: form.standard.value.trim(),
+      subject: form.subject.value.trim(),
+      startDate: form.startDate.value,
+      timing: form.timing.value
+    };
+
+    try {
+      await apiRequest("/batch/add", "POST", payload);
+
+      setShowModal(false);
+      loadData();
+
+      showToast("Batch created successfully");
+
+    } catch {
+      showToast("Failed to create batch", "error");
     }
   }
 
@@ -33,12 +80,61 @@ function Batches() {
     loadData();
   }, []);
 
+
+  async function updateBatch(e) {
+    e.preventDefault();
+
+    const form = e.target;
+
+    const payload = {
+      name: form.name.value.trim(),
+      fees: Number(form.fees.value) || 0,
+      standard: form.standard.value.trim(),
+      subject: form.subject.value.trim(),
+      timing: form.timing.value
+    };
+
+    try {
+      await apiRequest(`/batch/update/${selectedBatch.id}`, "PUT", payload);
+
+      setSelectedBatch(null);
+      loadData();
+
+      showToast("Batch updated successfully");
+
+    } catch {
+      showToast("Failed to update batch", "error");
+    }
+  }
+
+
+  async function removeTeacherFromBatch(batchId, teacherId) {
+    if (!window.confirm("Remove this teacher from batch?")) return;
+    try {
+      await apiRequest("/batch/remove-teacher", "DELETE", {
+        batchId,
+        teacherId
+      });
+
+      showToast("Teacher removed");
+
+      //  update UI instantly
+      setSelectedBatch(prev => ({
+        ...prev,
+        teachers: prev.teachers.filter(t => t.id !== teacherId)
+      }));
+
+      loadData();
+
+    } catch {
+      showToast("Failed to remove teacher", "error");
+    }
+  }
+
 //   console.log(batches);
-  const getTeacherName = (id) =>
-    teachers.find(t => t.id === id)?.name || "Unknown";
 
   const filtered = batches.filter(b =>
-    b.name.toLowerCase().includes(search.toLowerCase())
+    (b.name || '').toLowerCase().includes(search.toLowerCase())
   );
 
   function BatchesSkeleton() {
@@ -106,6 +202,35 @@ function Batches() {
         </button>
       </div>
 
+
+      {showModal && (
+        <div className="full-modal">
+          <div className="modal-content">
+
+            <h2>Add Batch</h2>
+
+            <form onSubmit={addBatch} className="grid-form">
+
+              <input name="name" placeholder="Batch Name" required />
+              <input name="fees" placeholder="Fees" required />
+              <input name="standard" placeholder="Standard" required />
+              <input name="subject" placeholder="Subject" required />
+              <input type="date" name="startDate" required />
+              <input name="timing" type="time" placeholder="Timing" required />
+
+              <div className="form-actions">
+                <button type="submit">Create Batch</button>
+                <button type="button" onClick={() => setShowModal(false)}>
+                  Cancel
+                </button>
+              </div>
+
+            </form>
+
+          </div>
+        </div>
+      )}
+
       {/* STATS */}
       <div className="stats-strip">
         <div className="stat">
@@ -151,8 +276,12 @@ function Batches() {
             </div>
 
             <div className="meta">
-              <p>{getTeacherName(b.teacherId)}</p>
-              <p>{b.timing}</p>
+              <p>
+                {b.teachers.length > 0
+                  ? b.teachers.map(t => t.name).join(", ")
+                  : "No teacher"}
+              </p>
+              <p>{b.batchTiming || b.timing}</p>
             </div>
 
           </div>
@@ -171,20 +300,72 @@ function Batches() {
         <div className="full-modal">
           <div className="modal-content">
 
-            <h2>{selectedBatch.name}</h2>
+            <div className="modal-header">
+              <h2>Edit Batch</h2>
+              <button onClick={() => setSelectedBatch(null)}>✕</button>
+            </div>
 
-            <p><strong>Teacher:</strong> {getTeacherName(selectedBatch.teacherId)}</p>
-            <p><strong>Fee:</strong> ₹{selectedBatch.fees}</p>
-            <p><strong>Timing:</strong> {selectedBatch.timing}</p>
+            <form onSubmit={updateBatch} className="grid-form">
 
-            <button onClick={() => setSelectedBatch(null)}>
-              Close
-            </button>
+              <div className="form-group">
+                <label>Name</label>
+                <input name="name" defaultValue={selectedBatch.name} />
+              </div>
+
+              <div className="form-group">
+                <label>Standard</label>
+                <input name="standard" defaultValue={selectedBatch.standard} />
+              </div>
+
+              <div className="form-group">
+                <label>Subject</label>
+                <input name="subject" defaultValue={selectedBatch.subject} />
+              </div>
+
+              <div className="form-group">
+                <label>Fees</label>
+                <input name="fees" defaultValue={selectedBatch.fees} />
+              </div>
+
+              <div className="form-group">
+                <label>Timing</label>
+                <input name="timing" defaultValue={selectedBatch.timing} />
+              </div>
+
+              {/*  TEACHERS SECTION */}
+              <div className="form-group">
+                <label>Teachers</label>
+
+                {selectedBatch.teachers.length === 0 && (
+                  <p>No teachers assigned</p>
+                )}
+
+                {selectedBatch.teachers.map(t => (
+                  <div key={t.id} style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+                    <span>{t.name}</span>
+
+                    <button
+                      type="button"
+                      onClick={() => removeTeacherFromBatch(selectedBatch.id, t.id)}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="form-actions">
+                <button type="submit">Update</button>
+                <button type="button" onClick={() => setSelectedBatch(null)}>
+                  Close
+                </button>
+              </div>
+
+            </form>
 
           </div>
         </div>
       )}
-
     </div>
   );
 }
