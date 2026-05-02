@@ -309,8 +309,9 @@ function Students() {
       .toLowerCase()
       .includes(search.toLowerCase());
 
+    // console.log(s)
     const matchBatch = selectedBatch
-      ? s.batchId === selectedBatch
+      ? s.batches.some(b => b.batchId === selectedBatch)
       : true;
 
     return matchSearch && matchBatch;
@@ -522,7 +523,7 @@ function Students() {
           <option value="">All Batches</option>
 
           {batches.map(b => (
-            <option key={b.id} value={b.id}>
+            <option key={b._id} value={b._id}>
               {b.name}
             </option>
           ))}

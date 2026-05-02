@@ -328,8 +328,10 @@ function Batches() {
               </div>
 
               <div className="form-group">
+                {/* <label>Current Timing</label>
+                <input defaultValue={selectedBatch.timing} /> */}
                 <label>Timing</label>
-                <input name="timing" defaultValue={selectedBatch.timing} />
+                <input name="timing" type="time" defaultValue={selectedBatch.timing} />
               </div>
 
               {/*  TEACHERS SECTION */}

@@ -6,6 +6,7 @@ const Teacher = require('../models/Teacher');
 const BatchTeacher = require('../models/BatchTeacher');
 const { pushJob } = require('../services/syncQueue');
 const authMiddleware = require('../middleware/authmiddleware');
+const { batchUpdateSchema } = require('../validators/batch.update.schema');
 
 router.post('/add', authMiddleware, async (req, res) => {
   try {
@@ -92,7 +93,6 @@ router.get('/list', authMiddleware, async (req, res) => {
     res.status(500).json({ error: "Error fetching batches" });
   }
 });
-
 
 
 router.post('/assign-teacher', authMiddleware, async (req, res) => {
@@ -240,4 +240,46 @@ router.get('/filter', authMiddleware, async (req, res) => {
   }
 });
 
+
+router.put(`/update/:id`, authMiddleware, async (req,res) => {
+  try {
+    const batchId = req.params.id;
+    
+    const { error , value} = batchUpdateSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({
+        errors: error.details.map(e => e.message)
+      });
+    }
+
+    // console.log(value);
+    const batch = await Batch.findOne({
+      _id: batchId,
+      ownerId: req.user.id
+    });
+
+    if (!batch) {
+      return res.status(404).json({ message: "batch not found" });
+    }
+
+    Object.assign(batch, {
+      name: value.name ?? batch.name,
+      fees: value.fees ?? batch.fees,
+      standard: value.standard ?? batch.standard,
+      subject: value.subject ?? batch.subject,
+      batchTiming: value.timing ?? batch.batchTiming
+    })
+
+    await batch.save();
+
+    res.json({
+      message: "Batch updated",
+      batch
+    });
+  }
+  catch(e) {
+    console.error("upate batch detail:",e);
+    res.status(500).json({error: "Error in updating..."});
+  }
+})
 module.exports = router;
