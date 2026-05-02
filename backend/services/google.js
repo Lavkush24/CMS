@@ -15,7 +15,7 @@ function getOAuthClient() {
   return new google.auth.OAuth2(
     process.env.CLIENT_ID,
     process.env.CLIENT_SECRET,
-    process.env.GOOGLE_CALLBACK_URL,
+    process.env.REDIRECT_URI,
   );
 }
 
