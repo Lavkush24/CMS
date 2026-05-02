@@ -7,11 +7,19 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Teachers from "./pages/Teachers";
 import Batches from "./pages/Batches"
 import Landing from "./pages/Landing";
+import OAuthSuccess from "./pages/oauth-success";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route 
+          path="/oauth-success"
+           element={
+            <OAuthSuccess />
+          } 
+        />
+
         <Route
           path="/"
           element={

@@ -94,7 +94,7 @@ router.get('/oauth2callback', async (req, res) => {
     );
 
     // redirect with token
-    res.redirect(`${process.env.FRONTEND_URL}/login?token=${jwtToken}`);
+    res.redirect(`${process.env.FRONTEND_URL}/oauth-success?token=${jwtToken}`);
 
   } catch (err) {
     console.error("OAuth Error:", err);
