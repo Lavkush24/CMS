@@ -15,6 +15,7 @@ connectDB();
 startWorker();
 
 app.use('/', require('./routes/auth'));
+app.use('/ping', require('./routes/ping'));
 app.use('/auth', require('./routes/auth'));
 app.use('/student',require('./routes/student'));
 app.use('/teacher', require('./routes/teacher'));
