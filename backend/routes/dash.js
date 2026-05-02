@@ -11,7 +11,7 @@ const BatchTeacher = require('../models/BatchTeacher');
 const StudentBatch = require('../models/StudentBatch');
 
 
-router.get('/overview', authMiddleware, requirePlan("PRO"), async (req, res) => {
+router.get('/overview', authMiddleware,async (req, res) => {
   try {
     const ownerId = req.user.id;
 

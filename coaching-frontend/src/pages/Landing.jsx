@@ -143,7 +143,9 @@ function Landing() {
         <h2>Start Managing Smarter Today</h2>
         <p>No setup. No complexity. Just results.</p>
 
-        <button onClick={() => navigate("/login")}>
+        <button onClick={() => {
+                window.location.href = `${import.meta.env.VITE_API_URL}/auth/login`;
+              }}>
           Login with Google →
         </button>
       </section>

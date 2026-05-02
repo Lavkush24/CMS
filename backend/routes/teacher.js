@@ -104,7 +104,7 @@ router.get('/list', authMiddleware, async (req, res) => {
 });
 
 
-router.get('/salary', authMiddleware, requirePlan("PRO"), async (req, res) => {
+router.get('/salary', authMiddleware, async (req, res) => {
   try {
     const ownerId = req.user.id;
 

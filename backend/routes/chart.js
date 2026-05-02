@@ -83,7 +83,7 @@ router.get('/revenue-per-batch', authMiddleware, async (req, res) => {
 });
 
 //  2. Monthly Revenue Trend
-router.get('/monthly-revenue', authMiddleware, requirePlan("PRO"), async (req, res) => {
+router.get('/monthly-revenue', authMiddleware, async (req, res) => {
   try {
     const ownerId = req.user.id;
 
@@ -122,7 +122,7 @@ router.get('/monthly-revenue', authMiddleware, requirePlan("PRO"), async (req, r
   }
 });
 
-router.get('/teacher-performance', authMiddleware, requirePlan("PRO"), async (req, res) => {
+router.get('/teacher-performance', authMiddleware, async (req, res) => {
   try {
     const { from, to } = req.query;
 

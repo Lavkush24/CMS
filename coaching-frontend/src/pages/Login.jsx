@@ -7,23 +7,21 @@ function Login() {
   const location = useLocation();
 
   useEffect(() => {
-    // 🔹 already logged in
-    const existingToken = getToken();
-    if (existingToken) {
+    const params = new URLSearchParams(location.search);
+    const token = params.get("token");
+
+    //  FIRST: handle OAuth token
+    if (token) {
+      setToken(token);
+
+      window.history.replaceState({}, document.title, "/login");
       navigate("/dashboard");
       return;
     }
 
-    // 🔹 extract token from URL
-    const params = new URLSearchParams(location.search);
-    const token = params.get("token");
-
-    if (token) {
-      setToken(token);
-
-      // 🔥 remove token from URL
-      window.history.replaceState({}, document.title, "/login");
-
+    // THEN: check existing login
+    const existingToken = getToken();
+    if (existingToken) {
       navigate("/dashboard");
     }
   }, [location, navigate]);
