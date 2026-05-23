@@ -15,7 +15,7 @@ function Students() {
   const [search, setSearch] = useState("");
   const [selectedBatches, setSelectedBatches] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState("");
-  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [selectedStudent, setSelectedStudent] = useState([]);
   const { showToast } = useToast();
   const [filteredBatches, setFilteredBatches] = useState([]);
   const [newEnrollment, setNewEnrollment] = useState({
@@ -48,6 +48,7 @@ function Students() {
     try {
       const data = await apiRequest("/student/list");
 
+      // console.log(data[0].batches.length);
       const normalized = data.map(s => ({
         id: s._id,
         name: s.name,
@@ -129,6 +130,22 @@ function Students() {
 
     } catch {
       alert("Failed to leave batch");
+    }
+  }
+
+  async function deleteBatch(studentId, batchId) {
+    if (!window.confirm("Remove this batch?")) return;
+
+    try {
+      await apiRequest("/student/delete-batch", "DELETE", {
+        studentId,
+        batchId
+      });
+
+      loadStudents();
+
+    } catch {
+      alert("Failed to delete batch");
     }
   }
 
@@ -428,9 +445,9 @@ function Students() {
                         batches: [
                           ...prev.batches,
                           {
-                            batchId: batch._id,
-                            name: batch.name,
-                            feesPaid: batch.fees
+                            batchId: batch._id || '',
+                            name: batch.name || '',
+                            feesPaid: batch.fees || ''
                           }
                         ]
                       };
@@ -584,7 +601,18 @@ function Students() {
                           leaveBatch(s.id, b.batchId);
                         }}
                       >
-                        Leave
+                        Unenrolled
+                      </button>
+                    )}
+
+                    {b.status === "LEFT" && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteBatch(s.id, b.batchId);
+                        }}
+                      >
+                        remove
                       </button>
                     )}
 
@@ -639,13 +667,20 @@ function Students() {
               <div className="form-actions">
                 <button type="submit">Update Info</button>
               </div>
-
             </form>
 
             {/*  BATCH MANAGEMENT */}
+            {/* { console.log(selectedStudent.batches.length)} */}
             <div className="batch-section">
-
               <h3>Enrolled Batches</h3>
+              {selectedStudent.batches?.length === 0 && (
+                <div className="empty-state">
+                  <hr />
+                  <h3>Student not Enrolled</h3>
+                  <p>Select Batch to Enroll</p>
+                  <hr />
+                </div>
+              )}
               {selectedStudent.batches?.map((b, i) => (
                 <div key={i} className="batch-item">
 
@@ -673,6 +708,17 @@ function Students() {
                         onClick={(e) => {
                           e.stopPropagation();
                           leaveBatch(selectedStudent.id, b.batchId);
+                        }}
+                      >
+                        unenrolled
+                      </button>
+                    )}
+
+                    {b.status === "LEFT" && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteBatch(selectedStudent.id, b.batchId);
                         }}
                       >
                         Remove
