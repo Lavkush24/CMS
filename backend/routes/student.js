@@ -165,75 +165,91 @@ router.get('/list', authMiddleware, async (req, res) => {
     // console.log(typeof req.user.id);
     const ownerId = new mongoose.Types.ObjectId(req.user.id);
     const students = await Student.aggregate([
-      {
-        $match: {
-          ownerId
+    {
+      $match: {
+        ownerId
+      }
+    },
+
+    {
+      $lookup: {
+        from: "studentbatches",
+        localField: "_id",
+        foreignField: "studentId",
+        as: "enrollments"
+      }
+    },
+
+    {
+      $unwind: {
+        path: "$enrollments",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+
+    {
+      $lookup: {
+        from: "batches",
+        localField: "enrollments.batchId",
+        foreignField: "_id",
+        as: "batch"
+      }
+    },
+
+    {
+      $unwind: {
+        path: "$batch",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+
+    {
+      $group: {
+        _id: "$_id",
+
+        name: { $first: "$name" },
+        standard: { $first: "$standard" },
+        phone: { $first: "$phone" },
+        aadharNumber: { $first: "$aadharNumber" },
+
+        batches: {
+          $push: {
+            batchId: "$batch._id",
+            name: "$batch.name",
+            subject: "$batch.subject",
+            feesPaid: "$enrollments.feesPaid",
+            defaultFees: "$batch.fees",
+            status: "$enrollments.status"
+          }
         }
-      },
+      }
+    },
 
-      //  join enrollments
-      {
-        $lookup: {
-          from: "studentbatches",
-          localField: "_id",
-          foreignField: "studentId",
-          as: "enrollments"
-        }
-      },
+    // REMOVE EMPTY BATCH OBJECTS
+    {
+      $project: {
+        name: 1,
+        standard: 1,
+        phone: 1,
+        aadharNumber: 1,
 
-      //  unwind enrollments
-      {
-        $unwind: {
-          path: "$enrollments",
-          preserveNullAndEmptyArrays: true
-        }
-      },
-
-      //  join batch per enrollment
-      {
-        $lookup: {
-          from: "batches",
-          localField: "enrollments.batchId",
-          foreignField: "_id",
-          as: "batch"
-        }
-      },
-
-      {
-        $unwind: {
-          path: "$batch",
-          preserveNullAndEmptyArrays: true
-        }
-      },
-
-      //  group back student
-      {
-        $group: {
-          _id: "$_id",
-
-          name: { $first: "$name" },
-          standard: { $first: "$standard" },
-          phone: { $first: "$phone" },
-          aadharNumber: { $first: "$aadharNumber" },
-          // status: { $first: "$status"},
-
-          batches: {
-            $push: {
-              batchId: "$batch._id",
-              name: "$batch.name",
-              subject: "$batch.subject",
-
-              //  from enrollment (IMPORTANT)
-              feesPaid: "$enrollments.feesPaid",
-              defaultFees: "$batch.fees",
-              status: "$enrollments.status"
+        batches: {
+          $filter: {
+            input: "$batches",
+            as: "b",
+            cond: {
+              $ne: [
+                { $ifNull: ["$$b.batchId", null] },
+                null
+              ]
             }
           }
         }
       }
-    ]);
+    }
+  ]);
 
-    // console.log(students);
+    console.log(students);
     res.json(students);
 
   } catch (err) {
@@ -319,6 +335,31 @@ router.put('/leave-batch', authMiddleware, async (req, res) => {
   }
 });
 
+router.delete('/delete-batch',authMiddleware,async (req,res) => {
+  try {
+    const { studentId, batchId } = req.body;
+
+    const studentObjId = new mongoose.Types.ObjectId(studentId);
+    const batchObjId = new mongoose.Types.ObjectId(batchId);
+    const ownerObjId = new mongoose.Types.ObjectId(req.user.id);
+
+    const responce = await StudentBatch.deleteOne(
+      {
+        studentId: studentObjId,
+        batchId: batchObjId,
+        ownerId: ownerObjId,
+      },
+      {
+        status: "LEFT"
+      }
+    );
+
+    res.json({ message: "Batch removed succesfully"});
+  }
+  catch(e) {
+    res.status(404).json({ message: "Error in deleting batch"})
+  }
+})
 
 router.post('/enroll', authMiddleware, async (req, res) => {
   try {
@@ -328,7 +369,7 @@ router.post('/enroll', authMiddleware, async (req, res) => {
     const batchObjId = new mongoose.Types.ObjectId(batchId);
     const ownerObjId = new mongoose.Types.ObjectId(req.user.id);
 
-    // 🔥 get batch (for default fee)
+    //  get batch (for default fee)
     const batch = await Batch.findOne({
       _id: batchObjId,
       ownerId: ownerObjId
@@ -353,7 +394,7 @@ router.post('/enroll', authMiddleware, async (req, res) => {
     await StudentBatch.create({
       studentId: studentObjId,
       batchId: batchObjId,
-      feesPaid: feesPaid != null ? Number(feesPaid) : batch.fees, // ✅ KEY LINE
+      feesPaid: feesPaid != null ? Number(feesPaid) : batch.fees, //  KEY LINE
       ownerId: ownerObjId
     });
 
