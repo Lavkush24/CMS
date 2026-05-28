@@ -29,7 +29,7 @@ router.get('/revenue-per-batch', authMiddleware, async (req, res) => {
         $group: {
           _id: "$batchId",
           totalStudents: { $sum: 1 },
-          revenue: { $sum: "$feesPaid" }
+          revenue: { $sum: "$fees" }
         }
       },
 
@@ -101,7 +101,7 @@ router.get('/monthly-revenue', authMiddleware, async (req, res) => {
             year: { $year: "$createdAt" },
             month: { $month: "$createdAt" }
           },
-          totalRevenue: { $sum: "$feesPaid" }
+          totalRevenue: { $sum: "$fees" }
         }
       },
 
@@ -164,7 +164,7 @@ router.get('/teacher-performance', authMiddleware, async (req, res) => {
           revenue: {
             $sum: {
               $multiply: [
-                "$feesPaid",
+                "$fees",
                 { $divide: ["$teacher.sharePercent", 100] }
               ]
             }

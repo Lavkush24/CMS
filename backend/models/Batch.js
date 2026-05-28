@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const batchSchema = new mongoose.Schema({
   name: String,
-  fees: Number,
+  batchFees: Number,
   standard: String,
   subject: String,
   startDate: Date,

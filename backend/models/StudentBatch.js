@@ -1,42 +1,58 @@
-    const mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
-    const studentBatchSchema = new mongoose.Schema({
-    studentId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Student',
-        required: true
-    },
+const studentBatchSchema = new mongoose.Schema({
 
-    batchId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Batch',
-        required: true
-    },
+  studentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Student',
+    required: true
+  },
 
-    feesPaid: {
-        type: Number,
-        default: 0
-    },
+  batchId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Batch',
+    required: true
+  },
 
-    status: {
-        type: String,
-        enum: ['ACTIVE', 'LEFT'],
-        default: 'ACTIVE'
-    },
+  fees: {
+    type: Number,
+    default: 0
+  },
 
-    joinedAt: {
-        type: Date,
-        default: Date.now
-    },
+  // NEW
+  billingType: {
+    type: String,
+    enum: [
+      'FULL_MONTH',
+      'PRORATED'
+    ],
+    default: 'FULL_MONTH'
+  },
 
-    leftAt: Date,
+  status: {
+    type: String,
+    enum: ['ACTIVE', 'LEFT'],
+    default: 'ACTIVE'
+  },
 
-    ownerId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
-    }
+  joinedAt: {
+    type: Date,
+    default: Date.now
+  },
 
-    }, { timestamps: true });
+  leftAt: Date,
 
-    module.exports = mongoose.model('StudentBatch', studentBatchSchema);
+  ownerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  }
+
+}, {
+  timestamps: true
+});
+
+module.exports = mongoose.model(
+  'StudentBatch',
+  studentBatchSchema
+);

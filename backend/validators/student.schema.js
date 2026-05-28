@@ -32,7 +32,7 @@ const studentSchema = Joi.object({
     Joi.object({
       batchId: Joi.string().required(),
       name: Joi.string().required(),
-      feesPaid: Joi.number().min(0).optional()
+      batchFees: Joi.number().min(0).optional()
     })
   ).min(0).required()
 });

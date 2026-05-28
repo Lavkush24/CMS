@@ -9,7 +9,7 @@ const batchUpdateSchema = Joi.object({
     .max(50)
     .required(),
 
-  fees: Joi.number()
+  batchFees: Joi.number()
     .min(0)
     .required(),
   

@@ -23,6 +23,7 @@ app.use('/batch', require('./routes/batch'));
 app.use('/dash', require('./routes/dash'));
 app.use('/upgrade',require('./routes/plan'));
 app.use('/chart', require('./routes/chart'));
+app.use('/fees',require('./routes/feeRecord'));
 
 app.listen(process.env.PORT, () => {
   console.log(`Server running on port ${process.env.PORT}`);

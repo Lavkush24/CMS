@@ -10,12 +10,12 @@ const { batchUpdateSchema } = require('../validators/batch.update.schema');
 
 router.post('/add', authMiddleware, async (req, res) => {
   try {
-    const { name, fees, standard, subject, startDate, timing, teacherIds = [] } = req.body;
+    const { name, batchFees, standard, subject, startDate, timing, teacherIds = [] } = req.body;
 
     // 1. Create batch
     const batch = await Batch.create({
       name,
-      fees,
+      batchFees,
       standard,
       subject,
       startDate,
@@ -59,6 +59,7 @@ router.post('/add', authMiddleware, async (req, res) => {
 
 router.get('/list', authMiddleware, async (req, res) => {
   try {
+
     const batches = await Batch.find({
       ownerId: req.user.id
     });
@@ -67,13 +68,16 @@ router.get('/list', authMiddleware, async (req, res) => {
       ownerId: req.user.id
     }).populate('teacherId');
 
-    // map batchId → teachers
+    // batchId -> teachers[]
     const map = {};
 
     batchTeachers.forEach(bt => {
+
       const bId = bt.batchId.toString();
 
-      if (!map[bId]) map[bId] = [];
+      if (!map[bId]) {
+        map[bId] = [];
+      }
 
       map[bId].push({
         id: bt.teacherId._id,
@@ -83,17 +87,22 @@ router.get('/list', authMiddleware, async (req, res) => {
 
     const result = batches.map(batch => ({
       ...batch.toObject(),
-      teachers: map[batch._id] || []
+
+      teachers: map[batch._id.toString()] || []
     }));
 
+    // console.log(result.teachers);
     res.json(result);
 
   } catch (err) {
+
     console.error(err);
-    res.status(500).json({ error: "Error fetching batches" });
+
+    res.status(500).json({
+      error: "Error fetching batches"
+    });
   }
 });
-
 
 router.post('/assign-teacher', authMiddleware, async (req, res) => {
   try {
@@ -230,7 +239,7 @@ router.get('/filter', authMiddleware, async (req, res) => {
 
     const batches = await Batch.find(query)
       .sort({ name: 1 }) // consistent UI order
-      .select("_id name subject standard fees"); // only needed fields
+      .select("_id name subject standard batchFees"); // only needed fields
 
     res.json(batches);
 
@@ -264,7 +273,7 @@ router.put(`/update/:id`, authMiddleware, async (req,res) => {
 
     Object.assign(batch, {
       name: value.name ?? batch.name,
-      fees: value.fees ?? batch.fees,
+      batchFees: value.batchFees ?? batch.batchFees,
       standard: value.standard ?? batch.standard,
       subject: value.subject ?? batch.subject,
       batchTiming: value.timing ?? batch.batchTiming

@@ -22,7 +22,7 @@ router.post('/add', authMiddleware, async (req, res) => {
 //     console.log("RAW BODY:", req.body);
 // console.log("VALIDATED VALUE:", value);
 
-    const { name, standard,subject, aadhar, phone, batches } = value;
+    const { name, standard, aadhar, phone, batches } = value;
 
     // Validate batch from Mongo (NOT Sheets)
     // extract all batchIds
@@ -45,7 +45,6 @@ router.post('/add', authMiddleware, async (req, res) => {
     const student = await Student.create({
       name,
       standard,
-      subject,
       aadharNumber: aadhar,
       phone,
       ownerId: req.user.id
@@ -60,7 +59,7 @@ router.post('/add', authMiddleware, async (req, res) => {
       const enrollments = batches.map(b => ({
         studentId: student._id,
         batchId: b.batchId,
-        feesPaid: b.feesPaid,
+        fees: b.batchFees,
         ownerId: req.user.id
       }));
 
@@ -72,7 +71,7 @@ router.post('/add', authMiddleware, async (req, res) => {
       await StudentBatch.create({
         studentId: student._id,
         batchId: req.body.batchId,
-        feesPaid: req.body.feePaid,
+        fees: req.body.batchFees,
         ownerId: req.user.id
       });
     }
@@ -90,8 +89,8 @@ router.post('/add', authMiddleware, async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error adding student" });
+    // console.error(err);
+    res.status(500).json({ message: "Error adding student" });
   }
 });
 
@@ -115,26 +114,11 @@ router.put('/update/:id', authMiddleware, async (req, res) => {
       return res.status(404).json({ message: "Student not found" });
     }
 
-    // Validate batch if updating
-    if (value.batchId) {
-      const batch = await Batch.findOne({
-        _id: value.batchId,
-        ownerId: req.user.id
-      });
-
-      if (!batch) {
-        return res.status(400).json({ error: "Invalid batchId" });
-      }
-    }
-
     Object.assign(student, {
       name: value.name ?? student.name,
       standard: value.standard ?? student.standard,
-      subject: value.subject ?? student.subject,
       aadharNumber: value.aadhar ?? student.aadharNumber,
-      phone: value.phone ?? student.phone,
-      batchId: value.batchId ?? student.batchId,
-      feesPaid: value.feePaid ?? student.feesPaid
+      phone: value.phone ?? student.phone
     });
 
     await student.save();
@@ -216,9 +200,8 @@ router.get('/list', authMiddleware, async (req, res) => {
           $push: {
             batchId: "$batch._id",
             name: "$batch.name",
-            subject: "$batch.subject",
-            feesPaid: "$enrollments.feesPaid",
-            defaultFees: "$batch.fees",
+            fees: "$enrollments.fees",
+            batchFees: "$batch.batchFees",
             status: "$enrollments.status"
           }
         }
@@ -249,7 +232,7 @@ router.get('/list', authMiddleware, async (req, res) => {
     }
   ]);
 
-    console.log(students);
+    // console.log(students);
     res.json(students);
 
   } catch (err) {
@@ -279,6 +262,19 @@ router.put('/leave/:id', authMiddleware, async (req, res) => {
     student.status = "LEFT";
     student.leaveDate = new Date();
 
+    
+    const updateBatch = await StudentBatch.updateMany(
+      {
+        ownerId: req.user.id,
+        studentId: req.params.id
+      },
+      {
+        status: "LEFT",
+        leftAt: Date.now()
+      },
+      { new : true }
+    );
+    
     await student.save();
 
     //  Async sync
@@ -363,7 +359,7 @@ router.delete('/delete-batch',authMiddleware,async (req,res) => {
 
 router.post('/enroll', authMiddleware, async (req, res) => {
   try {
-    const { studentId, batchId, feesPaid } = req.body;
+    const { studentId, batchId, fees } = req.body;
 
     const studentObjId = new mongoose.Types.ObjectId(studentId);
     const batchObjId = new mongoose.Types.ObjectId(batchId);
@@ -384,7 +380,7 @@ router.post('/enroll', authMiddleware, async (req, res) => {
       studentId: studentObjId,
       batchId: batchObjId,
       ownerId: ownerObjId,
-      status: "ACTIVE"
+      // status: "ACTIVE"
     });
 
     if (exists) {
@@ -394,7 +390,7 @@ router.post('/enroll', authMiddleware, async (req, res) => {
     await StudentBatch.create({
       studentId: studentObjId,
       batchId: batchObjId,
-      feesPaid: feesPaid != null ? Number(feesPaid) : batch.fees, //  KEY LINE
+      fees: fees != null ? Number(fees) : batch.batchFees, //  KEY LINE
       ownerId: ownerObjId
     });
 

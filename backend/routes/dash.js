@@ -36,7 +36,7 @@ router.get('/overview', authMiddleware,async (req, res) => {
     let totalRevenue = 0;
 
     studentBatches.forEach(sb => {
-      totalRevenue += sb.feesPaid || 0;
+      totalRevenue += sb.fees || 0;
     });
 
     // 3. batchId → teacherIds[]
@@ -67,7 +67,7 @@ router.get('/overview', authMiddleware,async (req, res) => {
 
     studentBatches.forEach(sb => {
       const batchId = sb.batchId.toString();
-      const fee = sb.feesPaid || 0;
+      const fee = sb.fees || 0;
 
       const teacherIds = batchToTeachers[batchId] || [];
 

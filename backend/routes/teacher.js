@@ -15,7 +15,7 @@ router.post('/add', authMiddleware, async (req, res) => {
     const {
       name, subject, sharePercent,
       joinDate, phone, aadhar,
-      mode, batchId, batchName, fees, timing
+      mode, batchId, batchName, batchFees, timing
     } = req.body;
 
     // 1. Create teacher
@@ -45,7 +45,7 @@ router.post('/add', authMiddleware, async (req, res) => {
     } else if(mode === "new"){
       // create new batch
 
-      if (!batchName || !fees || !timing) {
+      if (!batchName || !batchFees || !timing) {
         return res.status(400).json({
           error: "Missing batch data"
         });
@@ -53,7 +53,7 @@ router.post('/add', authMiddleware, async (req, res) => {
 
       batch = await Batch.create({
         name: batchName,
-        fees: fees,
+        batchFees: batchFees,
         startDate: joinDate,
         batchTiming: timing,
         ownerId: req.user.id
@@ -143,7 +143,7 @@ router.get('/salary', authMiddleware, async (req, res) => {
 
     studentBatches.forEach(sb => {
       const batchId = sb.batchId.toString();
-      const fee = sb.feesPaid || 0;
+      const fee = sb.fees || 0;
 
       const teacherIds = batchToTeachers[batchId] || [];
 

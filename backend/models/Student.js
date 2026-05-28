@@ -6,13 +6,10 @@ const studentSchema = new mongoose.Schema({
   aadharNumber: String,
   phone: String,
 
-  status: {
-    type: String,
-    enum: ['ACTIVE', 'LEFT'],
-    default: 'ACTIVE'
+  joinedCoachingAt: {
+    type: Date,
+    default: Date.now
   },
-
-  leaveDate: Date,
 
   ownerId: {
     type: mongoose.Schema.Types.ObjectId,
