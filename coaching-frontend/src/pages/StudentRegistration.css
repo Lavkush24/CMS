@@ -1,0 +1,220 @@
+/* ─── CONTAINER & HEADER ─────────────────────────────────── */
+.registration-container {
+  padding: 0; /* Assumes Layout.jsx handles outer padding */
+  font-family: 'Sora', sans-serif;
+  color: var(--text);
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.registration-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 24px;
+}
+
+.registration-header h2 {
+  margin: 0 0 6px 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.registration-header p {
+  margin: 0;
+  color: var(--subtext);
+  font-size: 14px;
+}
+
+/* ─── BUTTONS ────────────────────────────────────────────── */
+.btn-back {
+  background: transparent;
+  color: var(--subtext);
+  border: 1px solid var(--border);
+}
+
+.btn-back:hover {
+  background: var(--card);
+  color: var(--text);
+}
+
+.btn-submit {
+  background: var(--primary);
+  color: white;
+  padding: 10px 24px;
+}
+
+.btn-cancel {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 10px 24px;
+}
+
+.btn-cancel:hover {
+  background: var(--card);
+}
+
+/* ─── MAIN CARD & FORM ───────────────────────────────────── */
+.registration-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: var(--shadow-sm);
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-section h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.section-hint {
+  margin: -10px 0 0 0;
+  font-size: 13px;
+  color: var(--subtext);
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 32px 0;
+}
+
+/* ─── INPUT GRID ─────────────────────────────────────────── */
+.input-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--subtext);
+}
+
+.input-group input {
+  font-family: 'Sora', sans-serif;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-soft);
+}
+
+/* ─── BATCH SELECTOR ─────────────────────────────────────── */
+.batch-selector select {
+  width: 100%;
+  max-width: 400px;
+  font-family: 'Sora', sans-serif;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.batch-selector select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ─── SELECTED BATCH CHIPS ───────────────────────────────── */
+.selected-batches-area {
+  margin-top: 8px;
+  background: color-mix(in srgb, var(--border) 20%, transparent);
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px dashed var(--border);
+}
+
+.selected-batches-area h4 {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--subtext);
+}
+
+.chip-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.reg-batch-chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--text);
+  color: var(--bg);
+  padding: 8px 16px;
+  border-radius: 99px;
+  font-size: 13px;
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+}
+
+.reg-batch-chip button {
+  background: transparent;
+  color: var(--bg);
+  padding: 0;
+  opacity: 0.7;
+  font-size: 14px;
+}
+
+.reg-batch-chip button:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* ─── FOOTER ─────────────────────────────────────────────── */
+.form-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+/* ─── RESPONSIVE ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .input-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .registration-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .btn-back {
+    align-self: flex-start;
+  }
+}

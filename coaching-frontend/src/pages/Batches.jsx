@@ -26,7 +26,7 @@ function Batches() {
       const normalizedBatches = b.map(batch => ({
         id: batch._id,
         name: batch.name,
-        fees: batch.fees,
+        batchFees: batch.batchFees,
         standard: batch.standard,
         subject: batch.subject,
         timing: batch.batchTiming,
@@ -56,7 +56,7 @@ function Batches() {
 
     const payload = {
       name: form.name.value.trim(),
-      fees: Number(form.fees.value) || 0,
+      batchFees: Number(form.batchFees.value) || 0,
       standard: form.standard.value.trim(),
       subject: form.subject.value.trim(),
       startDate: form.startDate.value,
@@ -88,7 +88,7 @@ function Batches() {
 
     const payload = {
       name: form.name.value.trim(),
-      fees: Number(form.fees.value) || 0,
+      batchFees: Number(form.batchFees.value) || 0,
       standard: form.standard.value.trim(),
       subject: form.subject.value.trim(),
       timing: form.timing.value
@@ -212,7 +212,7 @@ function Batches() {
             <form onSubmit={addBatch} className="grid-form">
 
               <input name="name" placeholder="Batch Name" required />
-              <input name="fees" placeholder="Fees" required />
+              <input name="batchFees" placeholder="Fees" required />
               <input name="standard" placeholder="Standard" required />
               <input name="subject" placeholder="Subject" required />
               <input type="date" name="startDate" required />
@@ -243,7 +243,7 @@ function Batches() {
           <h3>
             ₹
             {Math.round(
-              batches.reduce((s, b) => s + Number(b.fees || 0), 0) /
+              batches.reduce((s, b) => s + Number(b.batchFees || 0), 0) /
               (batches.length || 1)
             )}
           </h3>
@@ -271,7 +271,7 @@ function Batches() {
             <div className="card-header">
               <h3>{b.name}</h3>
               <span className="badge">
-                ₹{b.fees}
+                ₹{b.batchFees}
               </span>
             </div>
 
@@ -324,7 +324,7 @@ function Batches() {
 
               <div className="form-group">
                 <label>Fees</label>
-                <input name="fees" defaultValue={selectedBatch.fees} />
+                <input name="fees" defaultValue={selectedBatch.batchFees} />
               </div>
 
               <div className="form-group">

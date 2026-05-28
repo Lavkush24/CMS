@@ -1,35 +1,57 @@
+/* ─── LIGHT MODE (Default) ───────────────────────────────── */
 :root {
-  /* Base */
-  --bg: #f8fafc;
-  --card: #ffffff;
+  /* Base Colors (Aligned to Students & Global CSS) */
+  --bg: #ffffff;
+  --card: #f9fafb;
+  --border: #e5e7eb;
+  
+  /* Typography */
   --text: #111827;
   --subtext: #6b7280;
-  --border: #e5e7eb;
 
-  /* Brand */
-  --primary: #4f46e5;
-  --primary-soft: rgba(79, 70, 229, 0.1);
+  /* Brand / Primary */
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-soft: rgba(37, 99, 235, 0.15);
 
-  /* States */
-  --success: #16a34a;
+  /* Status / States */
+  --success: #10b981;
   --error: #dc2626;
+  --danger: #dc2626; /* Kept both error and danger for safety */
 
   /* Shadows */
-  --shadow-sm: 0 4px 10px rgba(0,0,0,0.05);
-  --shadow-md: 0 8px 20px rgba(0,0,0,0.08);
+  --shadow-sm: 0 4px 10px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.08);
 }
 
-/* 🌙 DARK MODE */
+/* ─── DARK MODE ──────────────────────────────────────────── */
 .dark {
-  --bg: #0f172a;
-  --card: #1e293b;
-  --text: #f1f5f9;
-  --subtext: #94a3b8;
-  --border: #334155;
+  /* Base Colors */
+  --bg: #0f172a;       /* Deep slate background */
+  --card: #1e293b;     /* Slightly lighter slate for cards */
+  --border: #334155;   /* Subtle border for dark elements */
 
-  --primary: #6366f1;
-  --primary-soft: rgba(99, 102, 241, 0.15);
+  /* Typography */
+  --text: #f1f5f9;     /* High contrast white/gray */
+  --subtext: #94a3b8;  /* Muted slate for subtext */
 
-  --shadow-sm: 0 4px 10px rgba(0,0,0,0.4);
-  --shadow-md: 0 8px 20px rgba(0,0,0,0.5);
+  /* Brand / Primary */
+  --primary: #3b82f6;  /* Lighter, more vibrant blue for dark mode visibility */
+  --primary-hover: #60a5fa;
+  --primary-soft: rgba(59, 130, 246, 0.2);
+
+  /* Status / States */
+  --success: #34d399;  /* Adjusted to pop better on dark backgrounds */
+  --error: #ef4444;    
+  --danger: #ef4444;
+
+  /* Shadows */
+  --shadow-sm: 0 4px 10px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* ─── SMOOTH THEME TRANSITION ────────────────────────────── */
+/* Ensures toggling between light and dark mode feels smooth */
+:root, .dark {
+  color-scheme: light dark;
 }

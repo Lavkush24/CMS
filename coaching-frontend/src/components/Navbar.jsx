@@ -25,7 +25,7 @@ function Navbar() {
 
       {/* LEFT */}
       <div className="nav-left">
-        <h3>Coaching Manager</h3>
+        <h3></h3>
       </div>
 
       {/* RIGHT */}

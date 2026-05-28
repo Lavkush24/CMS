@@ -15,7 +15,7 @@
 
   box-shadow: 0 8px 20px rgba(0,0,0,0.08);
 
-  z-index: 1000;
+  z-index: 999999;
 
   animation: slideIn 0.25s ease;
 }

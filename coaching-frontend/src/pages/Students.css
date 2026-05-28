@@ -1,83 +1,27 @@
+/* ─── IMPORT ─────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@400;500;600;700&display=swap');
+
+/* ─── VARIABLES ──────────────────────────────────────────── */
+:root {
+  --bg: #ffffff;
+  --card: #f9fafb;
+  --border: #e5e7eb;
+  --text: #111827;
+  --subtext: #6b7280;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --danger: #dc2626;
+  --success: #10b981;
+}
+
+/* ─── CONTAINER & HEADER ─────────────────────────────────── */
 .students-container {
-  padding: 20px;
-}
-
-/* Grid */
-.card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 16px;
-}
-
-/* Card */
-.student-card {
-  background: var(--card);
+  padding: 24px 28px;
+  font-family: 'Sora', sans-serif;
   color: var(--text);
-
-  border-radius: 16px;
-  padding: 16px;
-
-  border: 1px solid var(--border);
-
-  box-shadow: var(--shadow-sm);
-
-  transition: all 0.25s ease;
+  background-color: var(--bg);
+  min-height: 100vh;
 }
-
-.student-card:hover {
-  transform: translateY(-4px) scale(1.01);
-}
-
-.student-card:active {
-  transform: scale(0.98);
-}
-
-/* Header */
-.card-header h3 {
-  margin: 0;
-  font-size: 16px;
-}
-
-.subtext {
-  font-size: 13px;
-  color: var(--subtext);
-}
-
-/* Main metric */
-.main-metric {
-  font-size: 24px;
-  font-weight: 600;
-  margin-top: 10px;
-}
-
-.main-metric small {
-  display: block;
-  font-size: 12px;
-  color: var(--subtext);
-}
-
-/* Details */
-.sub-metrics {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 12px;
-}
-
-.sub-metrics p {
-  margin: 0;
-  font-size: 12px;
-  color: var(--subtext);
-}
-
-/* Footer */
-.card-footer {
-  margin-top: 12px;
-  margin-bottom: 12px;
-}
-
-
-
-/* new style */
 
 .page-header {
   display: flex;
@@ -86,254 +30,421 @@
   margin-bottom: 24px;
 }
 
+.page-header h2 {
+  margin: 0 0 4px 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
 .page-header p {
+  margin: 0;
   color: var(--subtext);
   font-size: 14px;
 }
 
-.student-card {
-  background: var(--card);
-  border-radius: 16px;
-  padding: 16px;
-
-  border: 1px solid var(--border);
-
-  transition: all 0.25s ease;
+/* ─── BUTTONS & INPUTS ───────────────────────────────────── */
+button {
+  font-family: 'Sora', sans-serif;
+  background: var(--text);
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+input, select {
+  font-family: 'Sora', sans-serif;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  background: var(--bg);
+  color: var(--text);
+}
+
+input:focus, select:focus {
+  border-color: var(--subtext);
+}
+
+/* ─── TABLE WRAPPER (card-grid) ──────────────────────────── */
+/* This ensures the list acts as a vertical column (one per row) */
+.card-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100%;
+  
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden; /* Keeps the rounded corners intact */
+  
+  max-height: 72vh;
+  overflow-y: auto;
+  
+  /* Scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.card-grid::-webkit-scrollbar { width: 5px; }
+.card-grid::-webkit-scrollbar-track { background: transparent; }
+.card-grid::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 99px;
+}
+
+/* ─── STUDENT ROW (Strictly One Row) ─────────────────────── */
+.student-card {
+  display: grid !important;
+  grid-template-columns: 2.5fr 1fr 2fr 1fr !important;
+  width: 100% !important;
+  box-sizing: border-box;
+  
+  align-items: center;
+  padding: 14px 20px;
+  gap: 16px;
+  
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.student-card:last-child {
+  border-bottom: none;
 }
 
 .student-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
+  background: color-mix(in srgb, var(--card) 80%, var(--border) 20%);
 }
 
-/* Top */
+/* LEFT student row override */
+.student-card.left-card {
+  background: color-mix(in srgb, var(--danger) 5%, var(--bg));
+  border-bottom-color: color-mix(in srgb, var(--danger) 15%, var(--border));
+}
+
+.student-card.left-card:hover { 
+  background: color-mix(in srgb, var(--danger) 10%, var(--bg)); 
+}
+
+.student-card:active {
+  background: color-mix(in srgb, var(--card) 60%, var(--border) 40%);
+}
+
+/* ─── CARD COLUMNS ───────────────────────────────────────── */
 .card-top {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden; /* Prevents text overflow breaking the row */
 }
 
-/* Fee */
-.fee {
-  font-size: 24px;
+.card-top h3 {
+  margin: 0 0 4px 0;
+  font-size: 15px;
   font-weight: 600;
-  margin-top: 10px;
-  color: #10b981; /* green = money */
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Meta */
-.meta {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 12px;
+.subtext {
   font-size: 12px;
   color: var(--subtext);
+  font-family: 'DM Mono', monospace;
+  white-space: nowrap;
 }
 
+.fee {
+  font-size: 13px;
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.student-card.left-card .fee,
+.student-card.left-card .card-top h3 { 
+  color: #b91c1c; 
+}
+
+
+
+/* ─── BATCHES (Pill List) ────────────────────────────────── */
+.batch-list {
+  display: flex;
+  flex-wrap: nowrap; /* Forces pills to stay on one line */
+  overflow: hidden; /* Hides extra batches to keep row single-line */
+  gap: 6px;
+}
+
+.batch-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.batch-item strong {
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'DM Mono', monospace;
+  background: color-mix(in srgb, var(--border) 60%, transparent);
+  padding: 4px 10px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
+.batch-actions {
+  display: none; 
+}
+
+/* ─── META / PHONE ───────────────────────────────────────── */
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  font-size: 13px;
+  font-family: 'DM Mono', monospace;
+  color: var(--subtext);
+  white-space: nowrap; /* Ensure phone number doesn't break line */
+}
+
+.icon {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+.student-card.left-card .meta { color: #7f1d1d; }
+
+/* ─── STATUS BADGES ──────────────────────────────────────── */
+.status {
+  font-size: 10px;
+  font-family: 'DM Mono', monospace;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+  border-radius: 99px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.status.active {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--success);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.status.left {
+  background: rgba(220, 38, 38, 0.12);
+  color: var(--danger);
+  border: 1px solid rgba(220, 38, 38, 0.25);
+}
+
+/* ─── MODAL & FORMS ──────────────────────────────────────── */
 .full-modal {
   position: fixed;
   inset: 0;
-
-  background: rgba(0,0,0,0.4);
-  backdrop-filter: blur(6px);
-
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
   display: flex;
-  justify-content: center;
   align-items: center;
-
-  z-index: 9999; /* 🔥 VERY IMPORTANT */
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
 }
 
 .modal-content {
-  width: 80%;
-  max-width: 900px;
-
-  background: var(--card);
-  padding: 30px;
-  border-radius: 16px;
-}
-
-/* GRID FORM */
-.grid-form {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  margin-top: 20px;
-}
-
-.form-actions {
-  grid-column: span 2;
-  display: flex;
-  gap: 10px;
-}
-
-/* .student-card {
-  opacity: 0;
-  transform: translateY(10px);
-  animation: cardFade 0.4s ease forwards;
-} */
-
-.student-card {
-  position: relative;
-  overflow: hidden;
-}
-
-.student-card:nth-child(1) { animation-delay: 0.05s; }
-.student-card:nth-child(2) { animation-delay: 0.1s; }
-.student-card:nth-child(3) { animation-delay: 0.15s; }
-.student-card:nth-child(4) { animation-delay: 0.2s; }
-.student-card:nth-child(5) { animation-delay: 0.25s; }
-
-@keyframes cardFade {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-
-.student-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 4px;
+  background: var(--bg);
   width: 100%;
-  background: linear-gradient(90deg, #4f46e5, #10b981);
+  max-width: 500px;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  max-height: 90vh;
+  overflow-y: auto;
 }
-
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 20px;
 }
 
-.modal-header button {
-  background: transparent;
-  color: var(--text);
-  font-size: 18px;
+.modal-header h2 { margin: 0; }
+.modal-header button { background: transparent; color: var(--text); padding: 4px; }
+
+.grid-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .form-group label {
   font-size: 12px;
+  font-weight: 600;
   color: var(--subtext);
+  text-transform: uppercase;
 }
 
-.empty-state {
-  text-align: center;
-  margin-top: 40px;
-  color: var(--subtext);
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
 }
 
-.batch-select {
-  margin-bottom: 10px;
+.form-actions button[type="button"] {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+/* ─── BATCH SELECTION & CHIPS (In Modal) ─────────────────── */
+.batch-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.batch-section h3 {
+  font-size: 16px;
+  margin-bottom: 16px;
+}
+
+.batch-section .batch-item {
+  justify-content: space-between;
+  padding: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.batch-section .batch-actions {
+  display: flex; 
+  align-items: center;
+  gap: 10px;
+}
+
+.add-batch {
+  display: grid;
+  grid-template-columns: 2fr 1fr auto;
+  gap: 10px;
+  margin-top: 16px;
 }
 
 .selected-batches {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-top: 8px;
 }
 
 .batch-chip {
-  background: #eef2ff;
-  padding: 6px 10px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.batch-chip button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: red;
-}
-
-.batch-list {
-  background: var(--card-bg);
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.batch-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  background: var(--card-bg);  
-
-  padding: 12px 14px;
-  border-radius: 8px;
-  gap: 12px;
-
-  transition: all 0.2s ease;
-}
-
-.batch-item {
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(6px);
-  border: 1px solid var(--border);
-}
-
-.batch-item-list {
-  margin-bottom: 12px;
-}
-
-.batch-name {
-  font-weight: 600;
-}
-
-.batch-meta {
-  font-size: 12px;
-  color: var(--subtext);
-}
-
-.no-batch {
-  font-size: 12px;
-  color: #999;
-}
-
-.batch-actions {
   display: flex;
   align-items: center;
   gap: 8px;
+  background: var(--text);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
 }
 
-.modal {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  max-width: 400px;
+.batch-chip button {
+  background: transparent;
+  padding: 0;
+  color: #fff;
 }
 
-.add-batch {
-  margin-top: 15px;
-  display: flex;
-  gap: 10px;
+/* ─── SKELETON LOADER ────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, var(--card) 25%, var(--border) 50%, var(--card) 75%);
+  background-size: 200% 100%;
+  animation: skeletonLoading 1.5s infinite;
+  border-radius: 4px;
 }
 
-.modal-actions {
-  margin-top: 20px;
-  text-align: right;
+@keyframes skeletonLoading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
-.batch-section {
-  margin-top: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* ─── EMPTY STATE ────────────────────────────────────────── */
+.empty-state {
+  padding: 56px 20px;
+  text-align: center;
+  color: var(--subtext);
+}
+.empty-state h3 { margin: 0 0 8px 0; color: var(--text); }
+.empty-state p { margin: 0; font-size: 14px; }
+
+/* ─── RESPONSIVE (Keeps 1 item per row even on mobile) ───── */
+@media (max-width: 768px) {
+  .student-card {
+    /* Stack elements vertically inside the card on small screens */
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    row-gap: 12px;
+  }
+  .card-top { grid-column: 1 / -1; }
+  .fee { grid-column: 1; }
+  .meta { grid-column: 2; justify-content: flex-end; }
+  .batch-list { display: none; }
+  
+  .add-batch {
+    grid-template-columns: 1fr;
+  }
 }
 
+/* ─── TABLE HEADER ───────────────────────────────────────── */
+.table-header {
+  display: grid !important;
+  grid-template-columns: 2.5fr 1fr 2fr 1fr !important;
+  width: 100%;
+  align-items: center;
+  padding: 12px 20px;
+  
+  background: var(--card);
+  border-bottom: 2px solid var(--border);
+  
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--subtext);
+}
 
-
+@media (max-width: 768px) {
+  .table-header {
+    display: none; /* Hide header on mobile since cards stack vertically */
+  }
+}

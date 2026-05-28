@@ -1,33 +1,69 @@
+/* ─── MAIN LAYOUT WRAPPER ────────────────────────────────── */
 .layout {
   display: flex;
   min-height: 100vh;
   background: var(--bg);
+  position: relative;
 }
 
-/* Main content area */
+/* ─── DYNAMIC MAIN CONTENT ───────────────────────────────── */
 .main {
-  margin-left: 250px;
+  /* Tells this container to fill all remaining space */
   flex: 1;
   display: flex;
   flex-direction: column;
+  
+  /* Critical for flexbox to not overflow when the sidebar pushes it */
+  min-width: 0; 
+  
+  /* Matches the cubic-bezier timing of the sidebar expansion */
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Topbar */
+/* ─── TOP NAVIGATION BAR ─────────────────────────────────── */
 .topbar {
   position: sticky;
   top: 0;
   z-index: 10;
-
-  backdrop-filter: blur(8px);
+  padding-left: 64px;
+  
+  /* Creates a modern glassmorphism effect for the header */
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  
+  border-bottom: 1px solid var(--border);
+  min-height: 64px;
 }
 
-/* Content */
+/* ─── PAGE CONTENT AREA ──────────────────────────────────── */
 .content {
+  flex: 1;
   padding: 24px;
+  padding-left: 64px;
   overflow-y: auto;
-  height: calc(100vh - 60px); /* adjust if navbar height changes */
+  
+  /* Custom scrollbar matching the application theme */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
 
-.topbar {
-  backdrop-filter: blur(8px);
+.content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 99px;
+}
+
+/* ─── RESPONSIVE BEHAVIOR ────────────────────────────────── */
+@media (max-width: 768px) {
+  .content {
+    padding: 16px;
+  }
 }

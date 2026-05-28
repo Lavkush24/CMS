@@ -1,9 +1,9 @@
+import { useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
-import "./Layout.css";
 import UpgradeModal from "../components/UpgradeModal";
-import { useEffect, useState } from "react";
 import { apiRequest } from "../api/client";
+import "./Layout.css";
 
 function Layout({ children }) {
   const [showUpgrade, setShowUpgrade] = useState(false);
@@ -15,24 +15,18 @@ function Layout({ children }) {
     return () => window.removeEventListener("show-upgrade", handler);
   }, []);
 
-
   const handleUpgrade = async () => {
     try {
       await apiRequest("/upgrade/plan", "POST");
-
       setShowUpgrade(false);
-
-      // reload user state
       window.location.reload();
-
     } catch (err) {
-      console.error("Upgrade failed");
+      console.error("Upgrade failed", err);
     }
   };
 
   return (
     <div className="layout">
-
       {showUpgrade && (
         <UpgradeModal
           onClose={() => setShowUpgrade(false)}
@@ -40,19 +34,19 @@ function Layout({ children }) {
         />
       )}
 
+      {/* The sticky sidebar we just built */}
       <Sidebar />
 
-      <div className="main">
-
-        <div className="topbar">
+      {/* Main content dynamically reacts to sidebar width */}
+      <main className="main">
+        <header className="topbar">
           <Navbar />
-        </div>
+        </header>
 
-        <div className="content">
+        <section className="content">
           {children}
-        </div>
-
-      </div>
+        </section>
+      </main>
     </div>
   );
 }

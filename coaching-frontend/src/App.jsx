@@ -8,6 +8,9 @@ import Teachers from "./pages/Teachers";
 import Batches from "./pages/Batches"
 import Landing from "./pages/Landing";
 import OAuthSuccess from "./pages/oauth-success";
+import StudentRegistration from "./pages/StudentRegistration";
+import EditStudent from "./pages/EditStudent";
+import Fees from "./pages/Fees";
 
 function App() {
   return (
@@ -77,6 +80,39 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <Batches />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/students/new"
+          element= {
+            <ProtectedRoute>
+              <Layout>
+                <StudentRegistration />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/students/edit/:id"
+          element= {
+            <ProtectedRoute>
+              <Layout>
+                <EditStudent />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/fee/:id"
+          element= {
+            <ProtectedRoute>
+              <Layout>
+                <Fees />
               </Layout>
             </ProtectedRoute>
           }

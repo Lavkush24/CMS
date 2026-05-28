@@ -57,7 +57,7 @@ export async function apiRequest(
     //  error handling
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || "Request failed");
+      throw new Error(err.error || err.message || "Request failed");
     }
 
     return await res.json();
