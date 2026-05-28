@@ -35,7 +35,7 @@ function Fees() {
     try {
 
       const res = await apiRequest(
-        `/fee/details/${id}`
+        `/fees/details/${id}`
       );
 
       setData(res);
