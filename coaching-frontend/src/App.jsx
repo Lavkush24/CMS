@@ -11,6 +11,8 @@ import OAuthSuccess from "./pages/oauth-success";
 import StudentRegistration from "./pages/StudentRegistration";
 import EditStudent from "./pages/EditStudent";
 import Fees from "./pages/Fees";
+import AddTeacher from "./pages/AddTeacher";
+import EditTeacher from "./pages/EditTeacher";
 
 function App() {
   return (
@@ -69,6 +71,28 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <Teachers />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/teachers/new"
+          element= {
+            <ProtectedRoute>
+              <Layout>
+                <AddTeacher />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/teachers/edit/:id"
+          element= {
+            <ProtectedRoute>
+              <Layout>
+                <EditTeacher />
               </Layout>
             </ProtectedRoute>
           }

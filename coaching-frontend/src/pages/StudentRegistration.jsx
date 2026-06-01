@@ -14,6 +14,7 @@ function StudentRegistration() {
   
   const [loading, setLoading] = useState(false);
   const [filteredBatches, setFilteredBatches] = useState([]);
+  const [payNow, setPayNow] = useState("no");
   
   const [form, setForm] = useState({
     name: "",
@@ -33,7 +34,7 @@ function StudentRegistration() {
 
     setLoading(true);
     try {
-      await apiRequest("/student/add", "POST", {
+      const res = await apiRequest("/student/add", "POST", {
         name: form.name,
         standard: form.standard,
         phone: form.phone,
@@ -42,8 +43,13 @@ function StudentRegistration() {
       });
 
       showToast("Student registered successfully!", "success");
-      navigate("/students"); // Go back to students page
-      
+
+      if (payNow === "yes") {
+        navigate(`/fee/${res.student._id}`);
+      } else {
+        navigate("/students");
+      }
+
     } catch (e) {
       showToast("Error registering student", "error");
     } finally {
@@ -225,6 +231,35 @@ function StudentRegistration() {
             </button>
           </div>
 
+          <div className="fee-selector">
+            <span>Do you want to collect fees now?</span>
+            <div>
+              <input
+                type="radio"
+                id="yes"
+                name="payNow"
+                value="yes"
+                checked={payNow === "yes"}
+                onChange={(e) => setPayNow(e.target.value)}
+              />
+              <label htmlFor="yes">
+                Yes
+              </label>
+            </div>
+            <div>
+              <input
+                type="radio"
+                id="no"
+                name="payNow"
+                value="no"
+                checked={payNow === "no"}
+                onChange={(e) => setPayNow(e.target.value)}
+              />
+              <label htmlFor="no">
+                No
+              </label>
+            </div>
+          </div>
 
         </form>
       </div>

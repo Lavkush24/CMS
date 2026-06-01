@@ -73,7 +73,7 @@ export default function EditStudent() {
 
     const updated = {
       name: form.name.value.trim(),
-      standard: form.standard.value.trim(),
+      // standard: form.standard.value.trim(),
       phone: form.phone.value.trim(),
       aadhar: form.aadhar.value.trim()
     };
@@ -149,8 +149,8 @@ export default function EditStudent() {
           ← Back to List
         </button>
 
-        <button className="btn-back" onClick={() => navigate(`/fee/${id}`)}>
-          ← Go to fee
+        <button className="btn-fee" onClick={() => navigate(`/fee/${id}`)}>
+          go to fees
         </button>
       </div>
 

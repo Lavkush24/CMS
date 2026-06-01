@@ -24,6 +24,14 @@
 }
 .btn-back:hover { background: var(--card); color: var(--text); }
 
+.btn-fee {
+  background: rgb(154, 33, 2);
+  color: #ffff;
+  border: 1px solid var(--border);
+}
+.btn-fee:hover { background: var(--card); color: var(--text); }
+
+
 /* ─── MAIN CARD ──────────────────────────────────────────── */
 .edit-card {
   background: var(--card);

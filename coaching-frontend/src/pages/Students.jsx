@@ -94,6 +94,7 @@ function Students() {
         <div className="card-grid">
           <div className="table-header">
             <div>Student Details</div>
+            <div>Remaining Fees</div>
             <div>Total Fees</div>
             <div>Enrolled Batches</div>
             <div style={{ textAlign: "right" }}>Contact Info</div>
@@ -101,6 +102,7 @@ function Students() {
           {[...Array(6)].map((_, i) => (
             <div className="student-card" key={i}>
               <div className="skeleton" style={{ width: "70%", height: 24 }} />
+              <div className="skeleton" style={{ width: "50%", height: 16 }} />
               <div className="skeleton" style={{ width: "50%", height: 16 }} />
               <div className="skeleton" style={{ width: "90%", height: 24, borderRadius: 99 }} />
               <div className="skeleton" style={{ width: "100%", height: 16 }} />
@@ -186,6 +188,11 @@ function Students() {
 
                 {/* 3. ENROLLED BATCHES */}
                 <div className="batch-list">
+                  {s.batches.length === 0 && (
+                    <div className="batch-item">
+                      <strong>Not enrolled</strong>
+                    </div>
+                  )}
                   {s.batches.map((b, i) => (
                     <div key={i} className="batch-item">
                       <strong>{b.name}</strong>
