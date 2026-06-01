@@ -116,7 +116,7 @@ router.put('/update/:id', authMiddleware, async (req, res) => {
 
     Object.assign(student, {
       name: value.name ?? student.name,
-      standard: value.standard ?? student.standard,
+      // standard: value.standard ?? student.standard,
       aadharNumber: value.aadhar ?? student.aadharNumber,
       phone: value.phone ?? student.phone
     });

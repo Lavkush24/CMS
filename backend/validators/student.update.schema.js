@@ -8,10 +8,6 @@ const studentUpdateSchema = Joi.object({
     .min(2)
     .max(50),
 
-  standard: Joi.string()
-    .trim()
-    .max(20),
-
   subject: Joi.string()
     .trim()
     .max(50),

@@ -39,13 +39,6 @@ router.post('/add', authMiddleware, async (req, res) => {
       await BatchTeacher.insertMany(relations);
     }
 
-    //  Sync batch
-    pushJob({
-      type: "CREATE_BATCH",
-      userId: req.user.id,
-      data: batch
-    });
-
     res.json({
       message: "Batch created",
       batch
