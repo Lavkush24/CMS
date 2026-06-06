@@ -218,6 +218,38 @@ function StudentRegistration() {
             )}
           </div>
 
+          {form.batches.length > 0 && (
+            <div className={`fee-selector`}>
+              <span>Do you want to collect fees now?</span>
+              <div className={`radio-option ${payNow === "yes" ? "selected" : ""}`}>
+                <input
+                  type="radio"
+                  id="yes"
+                  name="payNow"
+                  value="yes"
+                  checked={payNow === "yes"}
+                  onChange={(e) => setPayNow(e.target.value)}
+                />
+                <label htmlFor="yes">
+                  Yes
+                </label>
+              </div>
+              <div className={`radio-option ${payNow === "no" ? "selected" : ""}`}>
+                <input
+                  type="radio"
+                  id="no"
+                  name="payNow"
+                  value="no"
+                  checked={payNow === "no"}
+                  onChange={(e) => setPayNow(e.target.value)}
+                />
+                <label htmlFor="no">
+                  No
+                </label>
+              </div>
+            </div>
+          )} 
+
           <div className="form-footer">
             <button 
               type="button" 
@@ -230,37 +262,6 @@ function StudentRegistration() {
               {loading ? "Registering..." : "Register Student"}
             </button>
           </div>
-
-          <div className="fee-selector">
-            <span>Do you want to collect fees now?</span>
-            <div>
-              <input
-                type="radio"
-                id="yes"
-                name="payNow"
-                value="yes"
-                checked={payNow === "yes"}
-                onChange={(e) => setPayNow(e.target.value)}
-              />
-              <label htmlFor="yes">
-                Yes
-              </label>
-            </div>
-            <div>
-              <input
-                type="radio"
-                id="no"
-                name="payNow"
-                value="no"
-                checked={payNow === "no"}
-                onChange={(e) => setPayNow(e.target.value)}
-              />
-              <label htmlFor="no">
-                No
-              </label>
-            </div>
-          </div>
-
         </form>
       </div>
         {toast && (

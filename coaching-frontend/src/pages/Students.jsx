@@ -94,7 +94,6 @@ function Students() {
         <div className="card-grid">
           <div className="table-header">
             <div>Student Details</div>
-            <div>Remaining Fees</div>
             <div>Total Fees</div>
             <div>Enrolled Batches</div>
             <div style={{ textAlign: "right" }}>Contact Info</div>

@@ -218,3 +218,29 @@
     align-self: flex-start;
   }
 }
+
+.fee-selector {
+  display: flex;
+  flex-direction: row;
+  font-size: larger;
+  font-weight: 500;
+  gap: 8px;
+  padding-top: 18px;
+}
+
+.radio-option {
+  cursor: pointer;
+}
+
+.radio-option label {
+  cursor: pointer;
+}
+
+.radio-option.selected {
+  color: #4caf50;
+  cursor: pointer;
+}
+
+.radio-option input[type="radio"] {
+  accent-color: #4caf50;
+}
